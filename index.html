@@ -205,7 +205,7 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label fw-bold text-danger">Código del Producto</label>
-              <input type="text" id="a_codigo" class="form-control bg-light fw-bold text-danger" readonly placeholder="Apunta la cámara a un código...">
+              <input type="text" id="a_codigo" class="form-control fw-bold text-danger" placeholder="Escribe el código o escanea...">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold text-danger">Sucursal</label>
@@ -368,15 +368,32 @@
     }
 
     // --- SECCIÓN: CATÁLOGO PÚBLICO ---
-   window.onload = async function() {
-    const categorias = await llamarServidor('obtenerCategoriasFiltro');
-    if (categorias) renderizarCategorias(categorias);
+  window.onload = async function() {
+  // 1. Carga inicial de categorías y productos públicos
+  const categorias = await llamarServidor('obtenerCategoriasFiltro');
+  if (categorias) renderizarCategorias(categorias);
   
-      filtrarPorCategoria('TODO');
+  filtrarPorCategoria('TODO');
 
-  // Solo cargamos la tabla si el elemento existe en el HTML actual
-    if (document.getElementById('tabla-inventario')) {
+  // 2. Lógica para el Panel de Administración (solo si existe el elemento)
+  if (document.getElementById('tabla-inventario')) {
     await cargarTablaAdmin();
+    
+    // 🔥 Configuramos los inputs para que se limpien solos
+    const inputActualizar = document.getElementById('a_codigo');
+    const inputNuevo = document.getElementById('n_codigo');
+
+    if (inputActualizar) {
+      inputActualizar.addEventListener('blur', function() {
+        this.value = this.value.trim().toUpperCase();
+      });
+    }
+
+    if (inputNuevo) {
+      inputNuevo.addEventListener('blur', function() {
+        this.value = this.value.trim().toUpperCase();
+      });
+    }
   }
 };
 
@@ -704,7 +721,6 @@
        </tr>`).join('');
     }).join('');
   }
-}
 </script>
 </body>
 </html>
