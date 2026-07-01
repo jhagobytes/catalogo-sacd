@@ -305,26 +305,28 @@
 
     // Túnel HTTP POST universal (Reemplaza a google.script.run)
     async function llamarServidor(operacion, datosExtra = {}) {
-      try {
-        const payload = {
-          op: operacion,
-          clave: claveAdministrador, 
-          ...datosExtra
-        };
+  try {
+    const payload = {
+      op: operacion,
+      clave: claveAdministrador, 
+      ...datosExtra
+    };
 
-        const respuesta = await fetch(URL_API, {
-          method: 'POST',
-          mode: 'cors',
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        return await respuesta.json();
-      } catch (error) {
-        console.error("Fallo de red:", error);
-        alert("❌ Error de comunicación con la base de datos.");
-        return null;
-      }
-    }
+    const respuesta = await fetch(URL_API, {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'no-store', // 🔥 ESTO ES LO QUE SOLUCIONA EL TIEMPO REAL
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    
+    return await respuesta.json();
+  } catch (error) {
+    console.error("Fallo de red:", error);
+    alert("❌ Error de comunicación con la base de datos.");
+    return null;
+  }
+}
 
     // --- SECCIÓN: CONTROL DE ACCESO (LOGIN) ---
     function evaluarEnter(e) {
@@ -636,30 +638,39 @@
     }
 
     async function guardarActualizacion() {
-      const boton = document.getElementById('btnActualizar');
-      const datos = {
-        codigo: document.getElementById('a_codigo').value,
-        sucursal: document.getElementById('a_sucursal').value,
-        stock: document.getElementById('a_stock').value,
-        pMayor: document.getElementById('a_pmayor_upd').value,
-        pMenor: document.getElementById('a_pmenor_upd').value
-      };
+  const boton = document.getElementById('btnActualizar');
+  const datos = {
+    codigo: document.getElementById('a_codigo').value,
+    sucursal: document.getElementById('a_sucursal').value,
+    stock: document.getElementById('a_stock').value,
+    pMayor: document.getElementById('a_pmayor_upd').value,
+    pMenor: document.getElementById('a_pmenor_upd').value
+  };
 
-      if(!datos.codigo || !datos.sucursal) { alert("El código y la sucursal son obligatorios."); return; }
+  if(!datos.codigo || !datos.sucursal) { 
+    alert("El código y la sucursal son obligatorios."); 
+    return; 
+  }
 
-      boton.disabled = true;
-      boton.innerHTML = "Actualizando...";
+  boton.disabled = true;
+  boton.innerHTML = "Actualizando...";
 
-      const res = await llamarServidor('actualizarInventario', { datos: datos });
-      
-      boton.disabled = false;
-      boton.innerHTML = "ACTUALIZAR INVENTARIO";
+  const res = await llamarServidor('actualizarInventario', { datos: datos });
+  
+  boton.disabled = false;
+  boton.innerHTML = "ACTUALIZAR INVENTARIO";
 
-      if(res) {
-        alert(res.mensaje);
-        document.getElementById('formActualizar').reset();
-      }
+  if(res) {
+    alert(res.mensaje);
+    
+    // Solo si la operación fue exitosa (el mensaje contiene "Éxito"), 
+    // recargamos la tabla para ver el cambio inmediatamente.
+    if (res.mensaje.includes("Éxito")) {
+      document.getElementById('formActualizar').reset();
+      await cargarTablaAdmin(); // 🔥 ESTO HACE QUE LA TABLA SE ACTUALICE SOLA
     }
+  }
+}
 
     async function cerrarSesion() {
       // Apagar hilos físicos de la cámara para que no consuman batería en el catálogo
