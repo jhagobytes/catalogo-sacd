@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema SACD | Catálogo y Panel Profesional</title>
+  <base target="_top">
+  <!-- CSS de Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Scripts de dependencias: Bootstrap + Librería del Escáner de Barras -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style>
+    body { background-color: #f4f6f9; min-height: 100vh; }
+    .card { border: none; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    .product-img { height: 220px; object-fit: cover; border-radius: 12px 12px 0 0; }
+    .badge-marca { background-color: #e9ecef; color: #495057; }
+    .filtros-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 10px; }
+    
+    /* Reglas específicas del módulo de login */
+    .contenedor-login {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 75vh;
+    }
+    .login-card { 
+      border: none; 
+      border-radius: 16px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+      width: 100%; 
+      max-width: 400px; 
+      padding: 2.5rem; 
+      background: #fff; 
+    }
+
+    /* Contenedor adaptativo para la cámara fija del administrador */
+    #reader { 
+      width: 100%; 
+      max-width: 450px; 
+      margin: 0 auto 20px auto; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="p-3 p-md-5">
+
+  <!-- ==========================================
+       VISTA 1: CATÁLOGO PÚBLICO (index.html)
+       ========================================== -->
+  <div id="vista-catalogo" class="container" style="max-width: 1200px;">
+    <div class="row mb-4">
+      <div class="col-12 text-center mb-4 position-relative">
+        <h2 class="fw-bold text-primary">Nuestro Catálogo</h2>
+        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0" onclick="cambiarVista('vista-login')">⚙️ Admin</button>
+      </div>
+
+      <!-- Buscador -->
+      <div class="col-md-8 mx-auto mt-3">
+        <input type="text" id="buscador" class="form-control form-control-lg shadow-sm" placeholder="🔍 Buscar por producto, marca o código..." onkeyup="filtrarProductos()">
+      </div>
+    </div>
+
+    <!-- Filtros de Categoría -->
+    <div class="filtros-scroll mb-4 text-center" id="contenedor-categorias">
+      <button class="btn btn-primary m-1" onclick="filtrarPorCategoria('TODO')">Todos</button>
+    </div>
+
+    <!-- Contenedor de Productos -->
+    <div class="row g-4" id="contenedor-productos">
+      <div class="col-12 text-center mt-5"><div class="spinner-border text-primary"></div></div>
+    </div>
+    
+    <div id="contenedor-ver-mas" class="text-center mt-4"></div>
+  </div>
+
+
+  <!-- ==========================================
+       VISTA 2: INICIAR SESIÓN (Login.html)
+       ========================================== -->
+  <div id="vista-login" class="container" style="display: none;">
+    <div class="contenedor-login">
+      <div class="login-card text-center">
+        <div class="mb-3 text-primary" style="font-size: 3rem;">🔒</div>
+        <h3 class="fw-bold text-dark mb-1">Panel SACD</h3>
+        <p class="text-muted small mb-4">Acceso restringido. Introduce la contraseña de administrador.</p>
+        
+        <div class="form-floating mb-3">
+          <input type="password" id="clave" class="form-control" placeholder="Contraseña" onkeypress="evaluarEnter(event)">
+          <label for="clave">Contraseña de acceso</label>
+        </div>
+        
+        <div id="mensaje-error" class="alert alert-danger p-2 small fw-bold" style="display:none;"></div>
+        
+        <button id="btn-ingresar" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm mb-3" onclick="procesarLogin()">
+          🔓 Entrar al Sistema
+        </button>
+
+        <button class="btn btn-link btn-sm text-muted text-decoration-none" onclick="cambiarVista('vista-catalogo')">
+          ⬅️ Volver al Catálogo
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       VISTA 3: PANEL DE ADMINISTRACIÓN (Admin.html)
+       ========================================== -->
+  <div id="vista-admin" class="container" style="max-width: 1200px; display: none;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+      <h2 class="text-primary m-0 fw-bold fs-4">Panel Administrativo SACD</h2>
+      <button class="btn btn-sm btn-outline-danger fw-bold" onclick="cerrarSesion()">🚪 Cerrar Sesión</button>
+    </div>
+
+    <!-- Estado de la Cámara -->
+    <div class="text-center mb-2">
+      <p id="status" class="text-warning small fw-bold m-0">⏳ Preparando escáner...</p>
+    </div>
+
+    <!-- Viewport de Cámara Fija -->
+    <div id="reader"></div>
+
+    <!-- Pestañas Administrativas -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold" id="nuevo-tab" data-bs-toggle="tab" data-bs-target="#nuevo" type="button" role="tab">📦 Registrar Nuevo</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold" id="actualizar-tab" data-bs-toggle="tab" data-bs-target="#actualizar" type="button" role="tab">🔄 Actualizar Inventario</button>
+      </li>
+    </ul>
+
+    <div class="tab-content bg-white p-4 rounded shadow-sm mb-5" id="adminTabsContent">
+        
+      <!-- Formulario: Nuevo Producto -->
+      <div class="tab-pane fade show active" id="nuevo" role="tabpanel">
+        <form id="formNuevo">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Código (Escaneado automáticamente)</label>
+              <input type="text" id="n_codigo" class="form-control bg-light fw-bold text-primary" readonly placeholder="Apunta la cámara a un código...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Categoría</label>
+              <select id="n_categoria" class="form-select" required></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Nombre del Producto</label>
+              <input type="text" id="n_nombre" class="form-control" placeholder="Ej: AUDÍFONOS SONY X" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Marca</label>
+              <input type="text" id="n_marca" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">URL Imagen</label>
+              <input type="url" id="n_url" class="form-control" placeholder="Pega el enlace..." onblur="previsualizarImagen()" required>
+              <div id="preview-container" class="mt-2 text-center" style="display:none;">
+                <img id="img-preview" src="" alt="Vista previa" style="max-height: 120px; border-radius: 8px;">
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Características (Opcional)</label>
+              <textarea id="n_caracteristicas" class="form-control" rows="2"></textarea>
+            </div>
+            <hr>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Sucursal</label>
+              <select id="n_sucursal" class="form-select sucursal-select" required></select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Precio Mayor</label>
+              <input type="number" id="n_pmayor" class="form-control" step="0.01" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Precio Menor</label>
+              <input type="number" id="n_pmenor" class="form-control" step="0.01" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Stock</label>
+              <input type="number" id="n_stock" class="form-control" placeholder="0" min="0" required>
+            </div>
+            <div class="col-12 mt-4">
+              <button type="button" id="btnGuardar" class="btn btn-primary w-100 py-2 fw-bold" onclick="guardarNuevo()">GUARDAR NUEVO PRODUCTO</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Formulario: Actualizar Inventario -->
+      <div class="tab-pane fade" id="actualizar" role="tabpanel">
+        <form id="formActualizar">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold text-danger">Código del Producto</label>
+              <input type="text" id="a_codigo" class="form-control bg-light fw-bold text-danger" readonly placeholder="Apunta la cámara a un código...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold text-danger">Sucursal</label>
+              <select id="a_sucursal" class="form-select sucursal-select" required></select>
+            </div>
+            <hr>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Stock</label>
+              <input type="number" id="a_stock" class="form-control" min="0" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Precio Mayor</label>
+              <input type="number" id="a_pmayor_upd" class="form-control" step="0.01" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Precio Menor</label>
+              <input type="number" id="a_pmenor_upd" class="form-control" step="0.01" required>
+            </div>
+            <div class="col-12 mt-4">
+              <button type="button" id="btnActualizar" class="btn btn-success w-100 py-2 fw-bold" onclick="guardarActualizacion()">ACTUALIZAR INVENTARIO</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL ASESORES (Catálogo) -->
+  <div class="modal fade" id="modalVendedores" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">Elegir Asesor de Venta</h5>
+        </div>
+        <div class="modal-body">
+          <div id="lista-vendedores"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       NÚCLEO DE PROGRAMACIÓN GLOBAL (MIGRADO)
+       ========================================== -->
+  <script>
+    // 🔗 IMPORTANTE: COLOCA AQUÍ TU URL EXECUTABLE DE GOOGLE APPS SCRIPT (/exec)
+    const URL_API = "https://script.google.com/macros/s/AKfycbwLwsaG7sGzcLw9810lc58FY62LUK0W6ZYZkknRe51EqLgdaFlcfT6G4y6s2QRytmCP7A/exec"; 
+    
+    let claveAdministrador = ""; 
+    let paginaActual = 0;
+    let categoriaSeleccionada = "TODO";
+    let busquedaActual = ""; 
+    let timerBusqueda;
+
+    // Herramientas de Scanner Administrativo
+    let html5QrCode = null;
+    let targetInputActual = "n_codigo"; 
+    let ultimoEscaneoTime = 0;
+    const COOLDOWN_TIME = 3000; 
+
+    const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav');
+    const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-84.wav');
+
+    // Enrutador visual SPA
+    function cambiarVista(idVista) {
+      document.getElementById('vista-catalogo').style.display = (idVista === 'vista-catalogo') ? 'block' : 'none';
+      document.getElementById('vista-login').style.display = (idVista === 'vista-login') ? 'block' : 'none';
+      document.getElementById('vista-admin').style.display = (idVista === 'vista-admin') ? 'block' : 'none';
+      
+      if(idVista === 'vista-login') {
+        setTimeout(() => document.getElementById('clave').focus(), 100);
+      }
+    }
+
+    // Túnel HTTP POST universal (Reemplaza a google.script.run)
+    async function llamarServidor(operacion, datosExtra = {}) {
+      try {
+        const payload = {
+          op: operacion,
+          clave: claveAdministrador, 
+          ...datosExtra
+        };
+
+        const respuesta = await fetch(URL_API, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        return await respuesta.json();
+      } catch (error) {
+        console.error("Fallo de red:", error);
+        alert("❌ Error de comunicación con la base de datos.");
+        return null;
+      }
+    }
+
+    // --- SECCIÓN: CONTROL DE ACCESO (LOGIN) ---
+    function evaluarEnter(e) {
+      if (e.key === 'Enter') procesarLogin();
+    }
+
+    async function procesarLogin() {
+      const claveInput = document.getElementById('clave').value;
+      const btn = document.getElementById('btn-ingresar');
+      const errorDiv = document.getElementById('mensaje-error');
+      
+      if (!claveInput) {
+        errorDiv.textContent = "Por favor, escribe la contraseña.";
+        errorDiv.style.display = "block";
+        return;
+      }
+      
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Verificando...`;
+      errorDiv.style.display = "none";
+      
+      const respuesta = await llamarServidor('verificarClave', { clave: claveInput });
+      
+      if (respuesta && respuesta.exito) {
+        claveAdministrador = claveInput; 
+        document.getElementById('clave').value = "";
+        btn.disabled = false;
+        btn.innerHTML = "🔓 Entrar al Sistema";
+        
+        // Saltamos al panel e iniciamos cámara y componentes internos de Sheets
+        cambiarVista('vista-admin');
+        inicializarAdmin();
+      } else {
+        errorDiv.textContent = respuesta ? respuesta.mensaje : "Contraseña inválida.";
+        errorDiv.style.display = "block";
+        btn.disabled = false;
+        btn.innerHTML = "🔓 Entrar al Sistema";
+      }
+    }
+
+    // --- SECCIÓN: CATÁLOGO PÚBLICO ---
+    window.onload = async function() {
+      const categorias = await llamarServidor('obtenerCategoriasFiltro');
+      if (categorias) renderizarCategorias(categorias);
+      filtrarPorCategoria('TODO');
+    };
+
+    function mostrarCargando(estado) {
+      const btnVerMas = document.getElementById('contenedor-ver-mas');
+      if (estado) btnVerMas.innerHTML = `<button class="btn btn-primary" disabled><span class="spinner-border spinner-border-sm"></span> Cargando...</button>`;
+      else btnVerMas.innerHTML = "";
+    }
+
+    function renderizarCategorias(categorias) {
+      const contenedor = document.getElementById('contenedor-categorias');
+      categorias.forEach(c => {
+        contenedor.innerHTML += `<button class="btn btn-outline-primary m-1" onclick="filtrarPorCategoria('${c.nombre}')">${c.nombre}</button>`;
+      });
+    }
+
+    function filtrarPorCategoria(categoria) {
+      categoriaSeleccionada = categoria;
+      busquedaActual = "";
+      document.getElementById('buscador').value = "";
+      paginaActual = 0;
+      document.getElementById('contenedor-productos').innerHTML = "";
+      pedirPagina();
+    }
+
+    function filtrarProductos() {
+      clearTimeout(timerBusqueda);
+      timerBusqueda = setTimeout(() => {
+        busquedaActual = document.getElementById('buscador').value;
+        paginaActual = 0;
+        document.getElementById('contenedor-productos').innerHTML = "";
+        pedirPagina();
+      }, 500);
+    }
+
+    async function pedirPagina() {
+      mostrarCargando(true);
+      let resultado;
+      if (busquedaActual.length > 0) {
+        resultado = await llamarServidor('buscarProductos', { texto: busquedaActual, pagina: paginaActual });
+      } else {
+        resultado = await llamarServidor('obtenerProductosPorPagina', { categoria: categoriaSeleccionada, pagina: paginaActual });
+      }
+      if (resultado) dibujarTarjetas(resultado);
+      else mostrarCargando(false);
+    }
+
+    function cargarMas() { paginaActual++; pedirPagina(); }
+
+    function dibujarTarjetas(resultado) {
+      const contenedor = document.getElementById('contenedor-productos');
+      const contenedorBoton = document.getElementById('contenedor-ver-mas');
+      if (paginaActual === 0) contenedor.innerHTML = "";
+      
+      if (resultado.productos.length === 0 && paginaActual === 0) {
+        contenedor.innerHTML = `<div class="col-12 text-center text-muted mt-5"><h4>No se encontraron productos 🤔</h4></div>`;
+        contenedorBoton.innerHTML = "";
+        return;
+      }
+
+      resultado.productos.forEach(p => {
+        const cantidadStock = (p.stock !== undefined && p.stock !== null) ? parseInt(p.stock) : 0;
+        const estaAgotado = (cantidadStock <= 0);
+        const boton = estaAgotado 
+          ? `<button class="btn btn-secondary w-100" disabled>No disponible</button>` 
+          : `<button class="btn btn-success w-100 fw-bold" onclick="iniciarContacto('${p.codigo}')">📱 Pedir por WhatsApp</button>`;
+        
+        const col = document.createElement('div');
+        col.className = "col-sm-6 col-md-4 col-lg-3";
+        col.innerHTML = `
+          <div class="card h-100 shadow-sm">
+            <img src="${p.url}" class="card-img-top product-img" alt="${p.nombre}">
+            <div class="card-body d-flex flex-column">
+              <span class="badge badge-marca mb-2 align-self-start">${p.marca}</span>
+              <h5 class="card-title fw-bold text-dark mb-1">${p.nombre}</h5>
+              <p class="text-muted small mb-2">Cód: ${p.codigo}</p>
+              <div class="mb-3">${obtenerEtiquetaStock(cantidadStock)}</div>
+              <div class="mt-auto">${boton}</div>
+            </div>
+          </div>`;
+        contenedor.appendChild(col);
+      });
+      contenedorBoton.innerHTML = resultado.tieneMas ? `<button class="btn btn-primary btn-lg" onclick="cargarMas()">Ver más productos</button>` : "";
+    }
+
+    function obtenerEtiquetaStock(stock) {
+      if (stock > 5) return '<span class="badge bg-success p-2">🟢 Disponible</span>';
+      if (stock > 0) return '<span class="badge bg-warning text-dark p-2 text-uppercase fw-bold" style="animation: pulse 1.5s infinite; font-size: 0.75rem;">⚠️ ¡Últimas unidades!</span>';
+      return '<span class="badge bg-secondary p-2">❌ Agotado temporalmente</span>';
+    }
+
+    async function iniciarContacto(codigo) {
+      const respuesta = await llamarServidor('obtenerContactoVendedor', { codigo: codigo });
+      if (!respuesta) return;
+      if (respuesta.error) { alert(respuesta.error); return; }
+      
+      let htmlBotones = '';
+      respuesta.vendedores.forEach(v => {
+        htmlBotones += `
+          <button class="btn btn-outline-success btn-lg fw-bold w-100 mb-3 d-flex justify-content-between align-items-center" 
+                  onclick="abrirWhatsApp('${v.numero}', '${v.nombre}', '${respuesta.codigo}')">
+            <span>💬 Hablar con ${v.nombre}</span>
+            <span class="badge bg-dark text-wrap p-2" style="font-size: 0.75rem;">📍 ${v.sucursal}</span>
+          </button>`;
+      });
+      document.getElementById('lista-vendedores').innerHTML = htmlBotones;
+      new bootstrap.Modal(document.getElementById('modalVendedores')).show();
+    }
+
+    function abrirWhatsApp(numero, nombreVendedor, codigoProducto) {
+      const mensaje = encodeURIComponent(`¡Hola, ${nombreVendedor}! Estoy interesado en el producto con código: ${codigoProducto} que vi en el catálogo. ¿Tienen disponibilidad?`);
+      window.open(`https://wa.me/${numero}?text=${mensaje}`, '_blank');
+    }
+
+
+    // --- SECCIÓN: PANEL DE ADMINISTRADOR (MIGRADO Y ADAPTADO) ---
+    async function inicializarAdmin() {
+      // 1. Cargar las listas del formulario de manera asíncrona
+      const listas = await llamarServidor('obtenerListasAdmin');
+      if (listas) llenarSelects(listas);
+      
+      // 2. Encender la cámara fija de forma segura tras autenticación
+      encenderCamaraDirecta();
+
+      // 3. Manejo inteligente del foco al cambiar de pestaña administrativa
+      const tabsEl = document.getElementById('adminTabs');
+      if (tabsEl && !tabsEl.dataset.listenerConfigured) {
+        tabsEl.addEventListener('shown.bs.tab', function (event) {
+          if (event.target.id === 'nuevo-tab') {
+            targetInputActual = "n_codigo";
+          } else if (event.target.id === 'actualizar-tab') {
+            targetInputActual = "a_codigo";
+          }
+        });
+        tabsEl.dataset.listenerConfigured = "true";
+      }
+    }
+
+    function llenarSelects(listas) {
+      let opcionesCat = '<option value="">Seleccione...</option>' + 
+        listas.categorias.map(c => `<option value="${c.prefijo}">${c.prefijo} - ${c.nombre}</option>`).join('');
+      document.getElementById('n_categoria').innerHTML = opcionesCat;
+
+      let opcionesSuc = '<option value="">Seleccione...</option>' + 
+        listas.sucursales.map(s => `<option value="${s}">${s}</option>`).join('');
+      document.querySelectorAll('.sucursal-select').forEach(el => el.innerHTML = opcionesSuc);
+    }
+
+    async function encenderCamaraDirecta() {
+      const status = document.getElementById('status');
+      try {
+        html5QrCode = new Html5Qrcode("reader");
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 15,
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+              let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              return { width: Math.floor(minEdge * 0.85), height: Math.floor(minEdge * 0.6) };
+            }
+          },
+          function(decodedText) {
+            const ahora = Date.now();
+            if (ahora - ultimoEscaneoTime < COOLDOWN_TIME) return;
+            
+            ultimoEscaneoTime = ahora;
+            playScanSound();
+
+            document.getElementById(targetInputActual).value = decodedText;
+            
+            status.innerHTML = "✅ ¡Código capturado! (" + decodedText + ")";
+            status.className = "text-success small fw-bold m-0";
+            
+            setTimeout(() => {
+              status.innerHTML = "📷 Escáner Activo - Apunta a un código de barras";
+              status.className = "text-primary small fw-bold m-0";
+            }, COOLDOWN_TIME);
+          },
+          function(errorMessage) {}
+        );
+
+        status.innerHTML = "📷 Escáner Activo - Apunta a un código de barras";
+        status.className = "text-primary small fw-bold m-0";
+
+      } catch(err) {
+        console.error(err);
+        showErrorSound();
+        status.innerHTML = "❌ Error de cámara. Asegúrate de dar permisos de cámara en tu navegador.";
+        status.className = "text-danger small fw-bold m-0";
+      }
+    }
+
+    function playScanSound(){
+      scanSound.currentTime = 0;
+      scanSound.play().catch(err => console.log("Audio retenido:", err));
+    }
+
+    function showErrorSound(){
+      errorSound.currentTime = 0;
+      errorSound.play().catch(err => console.log("Audio retenido:", err));
+    }
+
+    async function guardarNuevo() {
+      const boton = document.getElementById('btnGuardar');
+      const datos = {
+        codigo: document.getElementById('n_codigo').value,
+        prefijo: document.getElementById('n_categoria').value,
+        nombre: document.getElementById('n_nombre').value,
+        marca: document.getElementById('n_marca').value,
+        url: document.getElementById('n_url').value,
+        caracteristicas: document.getElementById('n_caracteristicas').value,
+        sucursal: document.getElementById('n_sucursal').value,
+        pMayor: document.getElementById('n_pmayor').value,
+        pMenor: document.getElementById('n_pmenor').value,
+        stock: document.getElementById('n_stock').value
+      };
+      
+      if(!datos.codigo || !datos.prefijo || !datos.nombre || !datos.stock) { 
+        alert("Escanea un código primero y completa los campos obligatorios."); 
+        return; 
+      }
+
+      boton.disabled = true;
+      boton.innerHTML = "Procesando...";
+      
+      const res = await llamarServidor('registrarNuevoProducto', { datos: datos });
+      
+      boton.disabled = false;
+      boton.innerHTML = "GUARDAR NUEVO PRODUCTO";
+      
+      if(res) {
+        alert(res.mensaje);
+        if (!res.mensaje.startsWith("ERROR")) {
+          document.getElementById('formNuevo').reset();
+          document.getElementById('preview-container').style.display = 'none';
+        }
+      }
+    }
+
+    async function guardarActualizacion() {
+      const boton = document.getElementById('btnActualizar');
+      const datos = {
+        codigo: document.getElementById('a_codigo').value,
+        sucursal: document.getElementById('a_sucursal').value,
+        stock: document.getElementById('a_stock').value,
+        pMayor: document.getElementById('a_pmayor_upd').value,
+        pMenor: document.getElementById('a_pmenor_upd').value
+      };
+
+      if(!datos.codigo || !datos.sucursal) { alert("El código y la sucursal son obligatorios."); return; }
+
+      boton.disabled = true;
+      boton.innerHTML = "Actualizando...";
+
+      const res = await llamarServidor('actualizarInventario', { datos: datos });
+      
+      boton.disabled = false;
+      boton.innerHTML = "ACTUALIZAR INVENTARIO";
+
+      if(res) {
+        alert(res.mensaje);
+        document.getElementById('formActualizar').reset();
+      }
+    }
+
+    async function cerrarSesion() {
+      // Apagar hilos físicos de la cámara para que no consuman batería en el catálogo
+      if(html5QrCode) { 
+        try { await html5QrCode.stop(); } catch(e){} 
+      }
+      claveAdministrador = ""; // Destruir token de acceso en memoria
+      cambiarVista('vista-catalogo'); // Redirigir al catálogo público
+    }
+
+    function previsualizarImagen() {
+      const url = document.getElementById('n_url').value;
+      const previewContainer = document.getElementById('preview-container');
+      const imgPreview = document.getElementById('img-preview');
+
+      if (url && url.startsWith('http')) {
+        imgPreview.src = url;
+        previewContainer.style.display = 'block';
+        imgPreview.onerror = function() {
+          alert("⚠️ La URL no es una imagen accesible de forma pública.");
+          previewContainer.style.display = 'none';
+        };
+      } else {
+        previewContainer.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
