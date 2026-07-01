@@ -232,7 +232,27 @@
       </div>
     </div>
   </div>
-
+  <div class="mt-5 p-3 bg-white rounded shadow-sm">
+  <h4 class="text-primary fw-bold">📋 Inventario Actual (Tiempo Real)</h4>
+  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+    <table class="table table-striped table-hover table-sm mt-3">
+      <thead class="table-dark">
+        <tr>
+          <th>Código</th>
+          <th>Nombre Producto</th>
+          <th>Categoría</th>
+          <th>Sucursal</th>
+          <th>Precio por mayor</th>
+          <th>Precio por menor</th>
+          <th>Stock</th>
+         </tr>
+      </thead>
+      <tbody id="tabla-inventario">
+        <!-- Aquí se cargarán los datos automáticamente -->
+      </tbody>
+    </table>
+  </div>
+</div>
 
   <!-- MODAL ASESORES (Catálogo) -->
   <div class="modal fade" id="modalVendedores" tabindex="-1">
@@ -640,6 +660,36 @@
         previewContainer.style.display = 'none';
       }
     }
+    async function cargarTablaAdmin() {
+  // Pedimos ambas listas simultáneamente
+  const [productos, inventario] = await Promise.all([
+    llamarServidor('obtenerListaProductosAdmin'),
+    llamarServidor('obtenerInventarioAdmin')
+  ]);
+
+  const tbody = document.getElementById('tabla-inventario');
+  
+  // Aquí los unes (asumiendo que tienen el mismo orden de filas)
+  tbody.innerHTML = productos.map((p, index) => {
+    const inv = inventario[index] || { sucursal: '-', stock: 0, pMayor: 0, pMenor: 0 };
+    return `
+      <tr>
+        <td>${p.codigo}</td>
+        <td>${p.nombre}</td>
+        <td>${p.categoria}</td>
+        <td>${inv.sucursal}</td>
+        <td>${inv.estadoAutomatico}</td>
+        <td>${inv.pMayor}</td>
+        <td>${inv.pMenor}</td>
+        <td>${inv.stock}</td>
+        
+      </tr>
+    `;
+  }).join('');
+}
+
+// Para que se actualice solo cada 10 segundos
+setInterval(cargarInventarioTiempoReal, 10000);
   </script>
 </body>
 </html>
