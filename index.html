@@ -503,6 +503,7 @@
       // 🔥 NUEVO: Iniciar la carga de la tabla de inventario en tiempo real
       cargarTablaAdmin();
       // 3. Manejo inteligente del foco al cambiar de pestaña administrativa
+      setInterval(cargarTablaAdmin, 10000);
       const tabsEl = document.getElementById('adminTabs');
       if (tabsEl && !tabsEl.dataset.listenerConfigured) {
         tabsEl.addEventListener('shown.bs.tab', function (event) {
@@ -668,29 +669,42 @@
         previewContainer.style.display = 'none';
       }
     }
-    async function cargarTablaAdmin() {
+   async function cargarTablaAdmin() {
   const [productos, inventario] = await Promise.all([
     llamarServidor('obtenerListaProductosAdmin'),
     llamarServidor('obtenerInventarioAdmin')
   ]);
 
-  // AGREGA ESTO PARA VER QUÉ ESTÁ PASANDO:
-  console.log("Productos recibidos:", productos);
-  console.log("Inventario recibido:", inventario);
-
   const tbody = document.getElementById('tabla-inventario');
   
-  // Validamos que 'productos' sea realmente un array
-  if (Array.isArray(productos) && tbody) {
+  if (Array.isArray(productos) && Array.isArray(inventario) && tbody) {
     tbody.innerHTML = productos.map(p => {
-       // ... tu lógica de unión ...
+       // Filtramos las sucursales donde exista este producto
+       let stockPorSucursal = inventario.filter(inv => inv.codigo === p.codigo);
+       
+       // Si no tiene stock registrado aún
+       if(stockPorSucursal.length === 0) {
+         return `<tr>
+           <td>${p.codigo}</td>
+           <td>${p.nombre}</td>
+           <td>${p.categoria}</td>
+           <td colspan="4" class="text-center text-muted">Sin inventario registrado</td>
+         </tr>`;
+       }
+
+       // Si tiene stock, creamos una fila por cada sucursal
+       return stockPorSucursal.map(inv => `<tr>
+         <td class="fw-bold">${p.codigo}</td>
+         <td>${p.nombre}</td>
+         <td>${p.categoria}</td>
+         <td><span class="badge bg-secondary">${inv.sucursal}</span></td>
+         <td>Bs. ${inv.pMayor}</td>
+         <td>Bs. ${inv.pMenor}</td>
+         <td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td>
+       </tr>`).join('');
     }).join('');
-  } else {
-    console.error("Error: 'productos' no es un array o no se encontró el tbody.");
   }
 }
-// Para que se actualice solo cada 10 segundos
-setInterval(cargarTablaAdmin, 10000);
-  </script>
+</script>
 </body>
 </html>
