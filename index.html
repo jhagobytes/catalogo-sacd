@@ -241,6 +241,7 @@
           <th>Nombre Producto</th>
           <th>Categoría</th>
           <th>Sucursal</th>
+          <th>Estado</th>
           <th>Precio por mayor</th>
           <th>Precio por menor</th>
           <th>Stock</th>
@@ -663,7 +664,6 @@
       }
     }
     async function cargarTablaAdmin() {
-  // Pedimos ambas listas simultáneamente
   const [productos, inventario] = await Promise.all([
     llamarServidor('obtenerListaProductosAdmin'),
     llamarServidor('obtenerInventarioAdmin')
@@ -671,27 +671,29 @@
 
   const tbody = document.getElementById('tabla-inventario');
   
-  // Aquí los unes (asumiendo que tienen el mismo orden de filas)
-  tbody.innerHTML = productos.map((p, index) => {
-    const inv = inventario[index] || { sucursal: '-', stock: 0, pMayor: 0, pMenor: 0 };
-    return `
-      <tr>
-        <td>${p.codigo}</td>
-        <td>${p.nombre}</td>
-        <td>${p.categoria}</td>
-        <td>${inv.sucursal}</td>
-        <td>${inv.estadoAutomatico}</td>
-        <td>${inv.pMayor}</td>
-        <td>${inv.pMenor}</td>
-        <td>${inv.stock}</td>
-        
-      </tr>
-    `;
-  }).join('');
+  if (productos && inventario && tbody) {
+    tbody.innerHTML = productos.map((p, index) => {
+      // Definimos el objeto con un valor por defecto para el estado si no existe
+      const inv = inventario[index] || { sucursal: '-', stock: 0, pMayor: 0, pMenor: 0, estadoAutomatico: '-' };
+      
+      return `
+        <tr>
+          <td>${p.codigo}</td>
+          <td>${p.nombre}</td>
+          <td>${p.categoria}</td>
+          <td>${inv.sucursal}</td>
+          <td>${inv.estadoAutomatico}</td> <!-- ✅ Aquí se imprime el dato -->
+          <td>${inv.pMayor}</td>
+          <td>${inv.pMenor}</td>
+          <td>${inv.stock}</td>
+        </tr>
+      `;
+    }).join('');
+  }
 }
 
 // Para que se actualice solo cada 10 segundos
-setInterval(cargarInventarioTiempoReal, 10000);
+setInterval(cargarTablaAdmin, 10000);
   </script>
 </body>
 </html>
