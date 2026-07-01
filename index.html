@@ -720,7 +720,10 @@
          <td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td>
        </tr>`).join('');
     }).join('');
+  } else {
+    console.error("Error: 'productos' no es un array o no se encontró el tbody.");
   }
+}
 </script>
 </body>
 </html>
