@@ -150,7 +150,7 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label fw-bold">Código (Escaneado automáticamente)</label>
-              <input type="text" id="n_codigo" class="form-control bg-light fw-bold text-primary" readonly placeholder="Apunta la cámara a un código...">
+              <input type="text" id="n_codigo" class="form-control bg-light fw-bold text-primary" placeholder="Escribe el código o escanea...">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">Categoría</label>
@@ -276,7 +276,7 @@
        ========================================== -->
   <script>
     // 🔗 IMPORTANTE: COLOCA AQUÍ TU URL EXECUTABLE DE GOOGLE APPS SCRIPT (/exec)
-    const URL_API = "https://script.google.com/macros/s/AKfycbwLwsaG7sGzcLw9810lc58FY62LUK0W6ZYZkknRe51EqLgdaFlcfT6G4y6s2QRytmCP7A/exec"; 
+    const URL_API = "https://script.google.com/macros/s/AKfycby-ykR3U5swKoOOYOU5kB9etPkxNuVQfbxmJ5XkNLM80-NrtpYWVKNKmPzUK2uKhvKwXA/exec"; 
     
     let claveAdministrador = ""; 
     let paginaActual = 0;
@@ -670,28 +670,26 @@
   ]);
 
   const tbody = document.getElementById('tabla-inventario');
-  
-  if (productos && inventario && tbody) {
-    tbody.innerHTML = productos.map((p, index) => {
-      // Definimos el objeto con un valor por defecto para el estado si no existe
-      const inv = inventario[index] || { sucursal: '-', stock: 0, pMayor: 0, pMenor: 0, estadoAutomatico: '-' };
-      
-      return `
-        <tr>
-          <td>${p.codigo}</td>
-          <td>${p.nombre}</td>
-          <td>${p.categoria}</td>
-          <td>${inv.sucursal}</td>
-          <td>${inv.estadoAutomatico}</td> <!-- ✅ Aquí se imprime el dato -->
-          <td>${inv.pMayor}</td>
-          <td>${inv.pMenor}</td>
-          <td>${inv.stock}</td>
-        </tr>
-      `;
-    }).join('');
-  }
-}
+  if (!tbody) return;
 
+  tbody.innerHTML = productos.map(p => {
+    // Buscamos el inventario que coincida con el código del producto
+    const inv = inventario.find(i => i.codigo === p.codigo) || { sucursal: '-', stock: 0, pMayor: 0, pMenor: 0, estadoAutomatico: '-' };
+    
+    return `
+      <tr>
+        <td>${p.codigo}</td>
+        <td>${p.nombre}</td>
+        <td>${p.categoria}</td>
+        <td>${inv.sucursal}</td>
+        <td>${inv.estadoAutomatico || '-'}</td>
+        <td>${inv.pMayor}</td>
+        <td>${inv.pMenor}</td>
+        <td>${inv.stock}</td>
+      </tr>
+    `;
+  }).join('');
+}
 // Para que se actualice solo cada 10 segundos
 setInterval(cargarTablaAdmin, 10000);
   </script>
