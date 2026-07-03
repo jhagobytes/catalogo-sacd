@@ -312,40 +312,53 @@
 }
 
     function renderizarCatalogoLocal() {
-      document.getElementById('contenedor-productos').style.opacity = "1";
-      
-      let productosFiltrados = Array.isArray(catalogoCompleto) ? catalogoCompleto : [];
-      
-      if (categoriaSeleccionada !== "TODO") {
-        productosFiltrados = productosFiltrados.filter(p => {
-          const catProducto = p.categoria ? String(p.categoria).toUpperCase().trim() : "";
-          return catProducto === categoriaSeleccionada.toUpperCase().trim();
-        });
-      }
-      
-      if (busquedaActual && busquedaActual.trim() !== "") {
-        const query = busquedaActual.toLowerCase().trim();
-        productosFiltrados = productosFiltrados.filter(p => {
-          const nombre = p.nombre ? String(p.nombre).toLowerCase() : "";
-          const codigo = p.codigo ? String(p.codigo).toLowerCase() : "";
-          const marca = p.marca ? String(p.marca).toLowerCase() : "";
-          const caracteristicas = p.caracteristicas ? String(p.caracteristicas).toLowerCase() : "";
-          
-          return nombre.includes(query) || 
-                 codigo.includes(query) || 
-                 marca.includes(query) || 
-                 caracteristicas.includes(query);
-        });
-      }
-      
-      const totalProductos = productosFiltrados.length;
-      const fin = (paginaActual + 1) * ITEMS_PER_PAGE;
-      const productosPagina = productosFiltrados.slice(0, fin);
-      const tieneMas = fin < totalProductos;
-      
-      dibujarTarjetas({ productos: productosPagina, tieneMas: tieneMas });
-      mostrarCargando(false);
+  document.getElementById('contenedor-productos').style.opacity = "1";
+  
+  // 1. PRIMERO: Eliminamos duplicados por código (para que no aparezca el mismo producto por cada sucursal)
+  let productosUnicos = [];
+  const codigosVistos = new Set();
+  
+  // Usamos el catálogo completo original
+  const listaBase = Array.isArray(catalogoCompleto) ? catalogoCompleto : [];
+  
+  listaBase.forEach(p => {
+    if (!codigosVistos.has(p.codigo)) {
+      productosUnicos.push(p);
+      codigosVistos.add(p.codigo);
     }
+  });
+
+  // 2. SEGUNDO: Filtramos sobre la lista única
+  let productosFiltrados = productosUnicos;
+  
+  if (categoriaSeleccionada !== "TODO") {
+    productosFiltrados = productosFiltrados.filter(p => {
+      const catProducto = p.categoria ? String(p.categoria).toUpperCase().trim() : "";
+      return catProducto === categoriaSeleccionada.toUpperCase().trim();
+    });
+  }
+  
+  if (busquedaActual && busquedaActual.trim() !== "") {
+    const query = busquedaActual.toLowerCase().trim();
+    productosFiltrados = productosFiltrados.filter(p => {
+      const nombre = p.nombre ? String(p.nombre).toLowerCase() : "";
+      const codigo = p.codigo ? String(p.codigo).toLowerCase() : "";
+      const marca = p.marca ? String(p.marca).toLowerCase() : "";
+      const caracteristicas = p.caracteristicas ? String(p.caracteristicas).toLowerCase() : "";
+      return nombre.includes(query) || codigo.includes(query) || marca.includes(query) || caracteristicas.includes(query);
+    });
+  }
+  
+  // 3. TERCERO: Ajustamos la paginación para mostrar todo o gran cantidad
+  // Si quieres mostrar todo, usamos un número muy alto.
+  const totalProductos = productosFiltrados.length;
+  const fin = (paginaActual + 1) * ITEMS_PER_PAGE;
+  const productosPagina = productosFiltrados.slice(0, fin);
+  const tieneMas = fin < totalProductos;
+  
+  dibujarTarjetas({ productos: productosPagina, tieneMas: tieneMas });
+  mostrarCargando(false);
+}
 
     function filtrarPorCategoria(categoria) {
       categoriaSeleccionada = categoria; busquedaActual = ""; document.getElementById('buscador').value = ""; paginaActual = 0;
