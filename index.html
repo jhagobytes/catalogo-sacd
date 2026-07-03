@@ -370,7 +370,7 @@
 
       resultado.productos.forEach(p => {
         const cantidadStock = (p.stock !== undefined && p.stock !== null) ? parseInt(p.stock) : 0;
-        const botonPrincipal = (cantidadStock <= 0) ? `<button class="btn btn-secondary w-100" disabled>Agotado</button>` : `<button class="btn btn-success w-100 fw-bold" onclick="iniciarContacto('${p.codigo}')">📱 Pedir WhatasApp</button>`;
+        const botonPrincipal = (cantidadStock <= 0);
         
         // Si hay varias URLs separadas por coma, la tarjeta principal solo muestra la primera para no romperse
         const miniatura = (p.url || "").split(',')[0].trim();
