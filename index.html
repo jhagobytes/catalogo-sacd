@@ -67,12 +67,15 @@
 
       <!-- Buscador -->
       <div class="col-md-8 mx-auto mt-3">
-        <input type="text" id="buscador" class="form-control form-control-lg shadow-sm" placeholder="🔍 Buscar por producto, marca o código..." onkeyup="filtrarProductos()">
+        <input type="text" id="buscador" class="form-control" 
+       placeholder="Busca por nombre, marca o características..." 
+       oninput="filtrarProductos()">
       </div>
     </div>
 
     <!-- Filtros de Categoría -->
     <div class="filtros-scroll mb-4 text-center" id="contenedor-categorias">
+      
       <button class="btn btn-primary m-1" onclick="filtrarPorCategoria('TODO')">Todos</button>
     </div>
 
@@ -422,14 +425,17 @@
     }
 
     function filtrarProductos() {
-      clearTimeout(timerBusqueda);
-      timerBusqueda = setTimeout(() => {
-        busquedaActual = document.getElementById('buscador').value;
-        paginaActual = 0;
-        document.getElementById('contenedor-productos').innerHTML = "";
-        pedirPagina();
-      }, 500);
-    }
+    clearTimeout(timerBusqueda);
+    timerBusqueda = setTimeout(() => {
+    busquedaActual = document.getElementById('buscador').value;
+    paginaActual = 0; // Reiniciamos a la página 1
+    
+    // Feedback visual para el usuario
+    document.getElementById('contenedor-productos').style.opacity = "0.5";
+    
+    pedirPagina(); // Esta función ya la tienes, se encargará de pedir al servidor
+  }, 500); // Espera 500ms antes de buscar
+}
 
     async function pedirPagina() {
       mostrarCargando(true);
