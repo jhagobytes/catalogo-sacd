@@ -259,29 +259,57 @@
     };
 
     function mostrarCargando(estado) {
-      const btnVerMas = document.getElementById('contenedor-ver-mas');
-      if (estado) btnVerMas.innerHTML = `<button class="btn btn-primary" disabled><span class="spinner-border spinner-border-sm"></span> Cargando...</button>`;
-      else btnVerMas.innerHTML = "";
-    }
+    const btnVerMas = document.getElementById('contenedor-ver-mas');
+    const contenedor = document.getElementById('contenedor-productos');
 
+    if (estado) {
+    // Si el contenedor está vacío (primera carga), mostramos el spinner
+    if (contenedor.innerHTML.trim() === "") {
+      btnVerMas.innerHTML = `<button class="btn btn-primary" disabled><span class="spinner-border spinner-border-sm"></span> Cargando catálogo...</button>`;
+    }
+  } else {
+    // Cuando termina de cargar, limpiamos el spinner
+    btnVerMas.innerHTML = "";
+  }
+}
     function renderizarCategorias(categorias) {
       const contenedor = document.getElementById('contenedor-categorias');
       categorias.forEach(c => { contenedor.innerHTML += `<button class="btn btn-outline-primary m-1" onclick="filtrarPorCategoria('${c.nombre}')">${c.nombre}</button>`; });
     }
 
-    async function cargarCatalogoServidor() {
-      mostrarCargando(true);
-      document.getElementById('contenedor-productos').style.opacity = "0.5";
-      const resultado = await llamarServidor('obtenerTodoElCatalogo');
-      if (resultado && Array.isArray(resultado)) {
-        catalogoCompleto = resultado;
-        renderizarCatalogoLocal();
-      } else {
-        document.getElementById('contenedor-productos').style.opacity = "1";
-        document.getElementById('contenedor-productos').innerHTML = `<div class="col-12 text-center text-danger mt-5">Error de conexión. Reintentando cargar catálogo...</div>`;
-        mostrarCargando(false);
-      }
-    }
+   async function cargarCatalogoServidor() {
+  // 1. Intentamos cargar lo que haya en la memoria del navegador
+  const cacheLocal = localStorage.getItem("catalogo_sacd_local");
+  
+  if (cacheLocal) {
+    catalogoCompleto = JSON.parse(cacheLocal);
+    renderizarCatalogoLocal(); // Mostramos al instante los datos guardados
+  } else {
+    // Si no hay caché, mostramos el spinner y bajamos la opacidad para indicar espera
+    mostrarCargando(true); 
+    document.getElementById('contenedor-productos').style.opacity = "0.5";
+  }
+
+  // 2. Consultamos al servidor en segundo plano (siempre)
+  const resultado = await llamarServidor('obtenerTodoElCatalogo');
+  
+  if (resultado && Array.isArray(resultado)) {
+    catalogoCompleto = resultado;
+    
+    // 3. Guardamos la nueva versión y refrescamos la vista
+    localStorage.setItem("catalogo_sacd_local", JSON.stringify(resultado));
+    renderizarCatalogoLocal(); 
+    
+    // IMPORTANTE: Devolvemos la opacidad a la normalidad si se estaba actualizando
+    document.getElementById('contenedor-productos').style.opacity = "1";
+    mostrarCargando(false);
+  } else if (!cacheLocal) { 
+    // Si no teníamos caché y además falló la conexión al servidor
+    document.getElementById('contenedor-productos').style.opacity = "1";
+    document.getElementById('contenedor-productos').innerHTML = `<div class="col-12 text-center text-danger mt-5">Error de conexión.</div>`;
+    mostrarCargando(false);
+  }
+}
 
     function renderizarCatalogoLocal() {
       document.getElementById('contenedor-productos').style.opacity = "1";
@@ -551,7 +579,8 @@
       
       if(res) {
         alert(res.mensaje);
-        if (!res.mensaje.startsWith("ERROR")) { 
+        if (!res.mensaje.startsWith("ERROR")) {
+          localStorage.removeItem("catalogo_sacd_local");
           document.getElementById('formNuevo').reset(); 
           document.getElementById('preview-container').style.display = 'none'; 
           document.getElementById('n_metodo_codigo').value = 'manual'; 
@@ -575,7 +604,8 @@
       
       if(res) {
         alert(res.mensaje);
-        if (res.mensaje.includes("Éxito")) { 
+        if (res.mensaje.includes("Éxito")) {
+          localStorage.removeItem("catalogo_sacd_local");
           document.getElementById('formActualizar').reset(); 
           document.getElementById('a_metodo_codigo').value = 'manual'; 
           cambiarMetodo('actualizar'); 
