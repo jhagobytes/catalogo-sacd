@@ -116,7 +116,7 @@
             <div class="col-md-6"><label class="form-label fw-bold">Nombre del Producto</label><input type="text" id="n_nombre" class="form-control" required></div>
             <div class="col-md-6"><label class="form-label fw-bold">Marca</label><input type="text" id="n_marca" class="form-control" required></div>
             <div class="col-12">
-              <label class="form-label fw-bold">URL Imagen (Opcional)</label><input type="url" id="n_url" class="form-control" onblur="previsualizarImagen()">
+              <label class="form-label fw-bold">URL Imagen (Opcional, separa con comas para carrusel)</label><input type="url" id="n_url" class="form-control" onblur="previsualizarImagen()">
               <div id="preview-container" class="mt-2 text-center" style="display:none;"><img id="img-preview" src="" alt="Vista previa" style="max-height: 120px; border-radius: 8px;"></div>
             </div>
             <div class="col-12"><label class="form-label fw-bold">Características</label><textarea id="n_caracteristicas" class="form-control" rows="2" required></textarea></div>
@@ -170,6 +170,37 @@
   </div>
 
   <div class="modal fade" id="modalVendedores" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-success text-white"><h5 class="modal-title">Elegir Asesor</h5></div><div class="modal-body"><div id="lista-vendedores"></div></div></div></div></div>
+
+  <!-- ========================================== MODAL DE DETALLES ========================================== -->
+  <div class="modal fade" id="modalDetalles" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-primary" id="detalle-nombre">Nombre del Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0 text-center">
+          
+          <!-- Contenedor dinámico para Imagen o Carrusel -->
+          <div id="contenedor-imagen-detalle"></div>
+          
+          <div class="p-4 text-start">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary" id="detalle-marca">Marca</span>
+              <span class="text-muted small fw-bold" id="detalle-codigo">Cód: </span>
+            </div>
+            
+            <h6 class="fw-bold mt-4 text-dark border-bottom pb-2">📋 Características Principales:</h6>
+            <p id="detalle-caracteristicas" class="text-muted" style="white-space: pre-wrap; font-size: 0.95rem;"></p>
+          </div>
+        </div>
+        <div class="modal-footer bg-light d-flex justify-content-between align-items-center w-100">
+           <div id="detalle-stock-badge"></div>
+           <button class="btn btn-success fw-bold px-4" id="detalle-btn-pedir">📱 Pedir por WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================== NÚCLEO JS ========================================== -->
   <script>
@@ -304,18 +335,100 @@
     function cargarMas() { paginaActual++; renderizarCatalogoLocal(); }
 
     function dibujarTarjetas(resultado) {
-      const contenedor = document.getElementById('contenedor-productos'); const contenedorBoton = document.getElementById('contenedor-ver-mas');
+      const contenedor = document.getElementById('contenedor-productos'); 
+      const contenedorBoton = document.getElementById('contenedor-ver-mas');
       if (paginaActual === 0) contenedor.innerHTML = "";
       if (resultado.productos.length === 0) { contenedor.innerHTML = `<div class="col-12 text-center text-muted mt-5"><h4>No se encontraron productos 🤔</h4></div>`; contenedorBoton.innerHTML = ""; return; }
 
       resultado.productos.forEach(p => {
         const cantidadStock = (p.stock !== undefined && p.stock !== null) ? parseInt(p.stock) : 0;
-        const boton = (cantidadStock <= 0) ? `<button class="btn btn-secondary w-100" disabled>No disponible</button>` : `<button class="btn btn-success w-100 fw-bold" onclick="iniciarContacto('${p.codigo}')">📱 Pedir por WhatsApp</button>`;
-        const col = document.createElement('div'); col.className = "col-sm-6 col-md-4 col-lg-3";
-        col.innerHTML = `<div class="card h-100 shadow-sm"><img src="${p.url}" class="card-img-top product-img" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'"><div class="card-body d-flex flex-column"><span class="badge badge-marca mb-2 align-self-start">${p.marca}</span><h5 class="card-title fw-bold text-dark mb-1" style="font-size:1.05rem;">${p.nombre}</h5><p class="text-muted small mb-2">Cód: ${p.codigo}</p><div class="mb-3">${obtenerEtiquetaStock(cantidadStock)}</div><div class="mt-auto">${boton}</div></div></div>`;
+        const botonPrincipal = (cantidadStock <= 0) ? `<button class="btn btn-secondary w-100" disabled>Agotado</button>` : `<button class="btn btn-success w-100 fw-bold" onclick="iniciarContacto('${p.codigo}')">📱 Pedir</button>`;
+        
+        // Si hay varias URLs separadas por coma, la tarjeta principal solo muestra la primera para no romperse
+        const miniatura = (p.url || "").split(',')[0].trim();
+
+        const col = document.createElement('div'); 
+        col.className = "col-sm-6 col-md-4 col-lg-3";
+        col.innerHTML = `
+          <div class="card h-100 shadow-sm">
+            <img src="${miniatura}" class="card-img-top product-img" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">
+            <div class="card-body d-flex flex-column p-3">
+              <span class="badge badge-marca mb-2 align-self-start">${p.marca}</span>
+              <h5 class="card-title fw-bold text-dark mb-1" style="font-size:1.05rem;">${p.nombre}</h5>
+              
+              <button class="btn btn-sm btn-outline-primary mt-2 mb-3 fw-bold w-100" onclick="abrirDetalles('${p.codigo}')">📄 Ver detalles</button>
+              
+              <div class="mt-auto d-flex justify-content-between align-items-center gap-2">
+                ${obtenerEtiquetaStock(cantidadStock)}
+                ${botonPrincipal}
+              </div>
+            </div>
+          </div>`;
         contenedor.appendChild(col);
       });
       contenedorBoton.innerHTML = resultado.tieneMas ? `<button class="btn btn-primary btn-lg px-4" onclick="cargarMas()">Ver más productos</button>` : "";
+    }
+
+    function abrirDetalles(codigo) {
+      const producto = catalogoCompleto.find(p => p.codigo === codigo);
+      if(!producto) return;
+
+      const cantidadStock = (producto.stock !== undefined && producto.stock !== null) ? parseInt(producto.stock) : 0;
+
+      // Separamos las URLs por comas y limpiamos espacios vacíos
+      const urls = (producto.url || "").split(',').map(u => u.trim()).filter(u => u !== "");
+      let htmlImagen = "";
+
+      if (urls.length > 1) {
+        let indicators = "";
+        let inner = "";
+        urls.forEach((u, index) => {
+          const active = index === 0 ? "active" : "";
+          indicators += `<button type="button" data-bs-target="#carouselDetalle" data-bs-slide-to="${index}" class="${active}"></button>`;
+          inner += `
+            <div class="carousel-item ${active}">
+              <img src="${u}" class="d-block w-100" style="object-fit: cover; height: 350px;" onerror="this.src='https://placehold.co/600x400?text=Error+de+Imagen'">
+            </div>`;
+        });
+        htmlImagen = `
+          <div id="carouselDetalle" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">${indicators}</div>
+            <div class="carousel-inner">${inner}</div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselDetalle" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon bg-dark rounded-circle p-2" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselDetalle" data-bs-slide="next">
+              <span class="carousel-control-next-icon bg-dark rounded-circle p-2" aria-hidden="true"></span>
+            </button>
+          </div>`;
+      } else {
+        const imgUrl = urls.length === 1 ? urls[0] : "https://placehold.co/600x400?text=Sin+Imagen";
+        htmlImagen = `<img src="${imgUrl}" class="img-fluid w-100" style="object-fit: cover; height: 350px;" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">`;
+      }
+
+      document.getElementById('contenedor-imagen-detalle').innerHTML = htmlImagen;
+      document.getElementById('detalle-nombre').innerText = producto.nombre;
+      document.getElementById('detalle-marca').innerText = producto.marca;
+      document.getElementById('detalle-codigo').innerText = "Cód: " + producto.codigo;
+      document.getElementById('detalle-caracteristicas').innerText = producto.caracteristicas || "Sin características detalladas.";
+      document.getElementById('detalle-stock-badge').innerHTML = obtenerEtiquetaStock(cantidadStock);
+
+      const btnPedir = document.getElementById('detalle-btn-pedir');
+      if(cantidadStock > 0) {
+        btnPedir.disabled = false;
+        btnPedir.className = "btn btn-success fw-bold px-4";
+        btnPedir.innerText = "📱 Pedir por WhatsApp";
+        btnPedir.onclick = () => {
+          bootstrap.Modal.getInstance(document.getElementById('modalDetalles')).hide();
+          iniciarContacto(producto.codigo);
+        };
+      } else {
+        btnPedir.disabled = true;
+        btnPedir.className = "btn btn-secondary fw-bold px-4";
+        btnPedir.innerText = "Agotado Temporalmente";
+      }
+
+      new bootstrap.Modal(document.getElementById('modalDetalles')).show();
     }
 
     function obtenerEtiquetaStock(stock) {
@@ -428,7 +541,6 @@
       
       if(datos.codigo.includes("⏳") || datos.codigo.includes("⚠️")) { alert("Espera a que el código se genere."); return; }
       
-      // Validación reducida: Solo se exige código, prefijo, nombre, marca y sucursal.
       if(!datos.codigo || !datos.prefijo || !datos.nombre || !datos.marca || !datos.sucursal || !datos.caracteristicas) { 
         alert("Completa los campos obligatorios principales (Código, Nombre, Marca, Sucursal, etc). Precios, stock y URL son opcionales."); return; 
       }
@@ -455,7 +567,6 @@
       const boton = document.getElementById('btnActualizar');
       const datos = { codigo: document.getElementById('a_codigo').value, sucursal: document.getElementById('a_sucursal').value, stock: document.getElementById('a_stock').value, pMayor: document.getElementById('a_pmayor_upd').value, pMenor: document.getElementById('a_pmenor_upd').value };
       
-      // Solo se exige código y sucursal. Lo demás puede ir en blanco.
       if(!datos.codigo || !datos.sucursal) { alert("El código y la sucursal son obligatorios para saber qué actualizar."); return; }
       
       boton.disabled = true; boton.innerHTML = "Actualizando...";
@@ -517,7 +628,9 @@
 
     function previsualizarImagen() {
       const url = document.getElementById('n_url').value; const preview = document.getElementById('preview-container'); const img = document.getElementById('img-preview');
-      if (url && url.startsWith('http')) { img.src = url; preview.style.display = 'block'; img.onerror = function() { alert("⚠️ URL inválida."); preview.style.display = 'none'; }; } else { preview.style.display = 'none'; }
+      // Tomamos solo el primer enlace por si pegaron varios para previsualizar en el admin
+      const primerUrl = (url || "").split(',')[0].trim();
+      if (primerUrl && primerUrl.startsWith('http')) { img.src = primerUrl; preview.style.display = 'block'; img.onerror = function() { alert("⚠️ URL inválida."); preview.style.display = 'none'; }; } else { preview.style.display = 'none'; }
     }
 
     async function cargarTablaAdmin() {
