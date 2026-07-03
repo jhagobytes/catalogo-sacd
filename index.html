@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema SACD | Catálogo y Panel Profesional</title>
   <base target="_top">
@@ -72,7 +72,7 @@
       </div>
     </div>
 
-    <!-- 📷 CONTENEDOR DE CÁMARA -->
+    <!-- 📷 CONTENEDOR DE CÁMARA / STATUS -->
     <div id="contenedor-camara-global" class="mb-4 bg-white p-3 rounded shadow-sm" style="display: none; border: 2px dashed #0d6efd;">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <p id="status" class="text-primary small fw-bold m-0">⏳ Iniciando cámara...</p>
@@ -175,8 +175,8 @@
   <script>
     const URL_API = "https://script.google.com/macros/s/AKfycby-ykR3U5swKoOOYOU5kB9etPkxNuVQfbxmJ5XkNLM80-NrtpYWVKNKmPzUK2uKhvKwXA/exec"; 
     
-    let catalogoCompleto = []; // Cache local del lado del cliente
-    const ITEMS_PER_PAGE = 12; // Paginación optimizada de 12 en 12
+    let catalogoCompleto = []; 
+    const ITEMS_PER_PAGE = 12; 
     
     let claveAdministrador = ""; let paginaActual = 0; let categoriaSeleccionada = "TODO"; let busquedaActual = ""; let timerBusqueda;
     let html5QrCode = null; let camaraActiva = false; let targetInputActual = "n_codigo"; 
@@ -238,9 +238,6 @@
       categorias.forEach(c => { contenedor.innerHTML += `<button class="btn btn-outline-primary m-1" onclick="filtrarPorCategoria('${c.nombre}')">${c.nombre}</button>`; });
     }
 
-    // =========================================================================
-    // MOTOR DE ULTRA ENRUTAMIENTO LOCAL (CLIENT-SIDE MOTOR SINCRO)
-    // =========================================================================
     async function cargarCatalogoServidor() {
       mostrarCargando(true);
       document.getElementById('contenedor-productos').style.opacity = "0.5";
@@ -255,29 +252,39 @@
       }
     }
 
+    // =========================================================================
+    // 🛡️ MOTOR DE BUSQUEDA LOCAL TOTALMENTE BLINDADO CONTRA TIPOS MULTIPLES
+    // =========================================================================
     function renderizarCatalogoLocal() {
       document.getElementById('contenedor-productos').style.opacity = "1";
       
-      // 1. Aplicar filtro de categoría
-      let productosFiltrados = catalogoCompleto;
+      let productosFiltrados = Array.isArray(catalogoCompleto) ? catalogoCompleto : [];
+      
+      // 1. Filtro seguro de categoría
       if (categoriaSeleccionada !== "TODO") {
-        productosFiltrados = productosFiltrados.filter(p => 
-          p.categoria && p.categoria.toUpperCase() === categoriaSeleccionada.toUpperCase()
-        );
+        productosFiltrados = productosFiltrados.filter(p => {
+          const catProducto = p.categoria ? String(p.categoria).toUpperCase().trim() : "";
+          return catProducto === categoriaSeleccionada.toUpperCase().trim();
+        });
       }
       
-      // 2. Aplicar filtro de buscador dinámico
-      if (busquedaActual.trim() !== "") {
+      // 2. Filtro seguro de buscador dinámico (Forzado a String a prueba de errores)
+      if (busquedaActual && busquedaActual.trim() !== "") {
         const query = busquedaActual.toLowerCase().trim();
-        productosFiltrados = productosFiltrados.filter(p => 
-          (p.nombre && p.nombre.toLowerCase().includes(query)) ||
-          (p.codigo && p.codigo.toLowerCase().includes(query)) ||
-          (p.marca && p.marca.toLowerCase().includes(query)) ||
-          (p.caracteristicas && p.caracteristicas.toLowerCase().includes(query))
-        );
+        productosFiltrados = productosFiltrados.filter(p => {
+          const nombre = p.nombre ? String(p.nombre).toLowerCase() : "";
+          const codigo = p.codigo ? String(p.codigo).toLowerCase() : "";
+          const marca = p.marca ? String(p.marca).toLowerCase() : "";
+          const caracteristicas = p.caracteristicas ? String(p.caracteristicas).toLowerCase() : "";
+          
+          return nombre.includes(query) || 
+                 codigo.includes(query) || 
+                 marca.includes(query) || 
+                 caracteristicas.includes(query);
+        });
       }
       
-      // 3. Segmentación por páginas (Paginación limpia)
+      // 3. Paginación segmentada
       const totalProductos = productosFiltrados.length;
       const fin = (paginaActual + 1) * ITEMS_PER_PAGE;
       const productosPagina = productosFiltrados.slice(0, fin);
@@ -442,7 +449,7 @@
           cambiarMetodo('nuevo'); 
           
           await cargarTablaAdmin(); 
-          await cargarCatalogoServidor(); // Recarga síncronamente el catálogo local limpio
+          await cargarCatalogoServidor(); 
         }
       }
     }
@@ -462,61 +469,48 @@
           cambiarMetodo('actualizar'); 
           
           await cargarTablaAdmin(); 
-          await cargarCatalogoServidor(); // Recarga síncronamente el catálogo local limpio
+          await cargarCatalogoServidor(); 
         }
       }
     }
+
     async function forzarLimpiarCacheUI() {
-  // 1. Confirmación previa del usuario
-  if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
+      if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
+      const status = document.getElementById('status');
+      try {
+        if (status) {
+          document.getElementById('contenedor-camara-global').style.display = 'block'; 
+          status.innerHTML = "⏳ Restableciendo caché en el servidor...";
+          status.className = "text-warning small fw-bold m-0";
+        }
 
-  const status = document.getElementById('status');
+        const res = await llamarServidor('forzarLimpiezaCache');
+        if (!res || !res.exito) {
+          throw new Error(res ? res.mensaje : "El servidor no envió una respuesta válida.");
+        }
 
-  try {
-    // Mostramos un estado visual de carga en la UI si el elemento existe
-    if (status) {
-      document.getElementById('contenedor-camara-global').style.display = 'block'; // Mostramos el contenedor si estaba oculto
-      status.innerHTML = "⏳ Restableciendo caché en el servidor...";
-      status.className = "text-warning small fw-bold m-0";
+        if (status) {
+          status.innerHTML = `✅ ${res.mensaje}`;
+          status.className = "text-success small fw-bold m-0";
+        }
+
+        await cargarTablaAdmin();
+        await cargarCatalogoServidor();
+
+        setTimeout(() => {
+          if (status && !camaraActiva) document.getElementById('contenedor-camara-global').style.display = 'none';
+        }, 4000);
+
+      } catch (error) {
+        errorSound.currentTime = 0; 
+        errorSound.play().catch(() => {}); 
+        if (status) {
+          document.getElementById('contenedor-camara-global').style.display = 'block';
+          status.innerHTML = `❌ Error: ${error.message}`;
+          status.className = "text-danger small fw-bold m-0";
+        }
+      }
     }
-
-    // 2. Petición asíncrona al servidor
-    const res = await llamarServidor('forzarLimpiezaCache');
-    
-    // Si la respuesta no existe o el servidor devolvió exito: false, forzamos la caída al 'catch'
-    if (!res || !res.exito) {
-      throw new Error(res ? res.mensaje : "El servidor no envió una respuesta válida.");
-    }
-
-    // 3. Si todo salió bien:
-    if (status) {
-      status.innerHTML = `✅ ${res.mensaje}`;
-      status.className = "text-success small fw-bold m-0";
-    }
-
-    // Actualizamos las tablas y el catálogo local en segundo plano
-    await cargarTablaAdmin();
-    await cargarCatalogoServidor();
-
-    // Opcional: Ocultar el mensaje de éxito después de 4 segundos
-    setTimeout(() => {
-      if (status) document.getElementById('contenedor-camara-global').style.display = 'none';
-    }, 4000);
-
-  } catch (error) {
-    // 4. CAPTURA Y MANEJO DE ERRORES EN LA INTERFAZ
-    // Aquí cae si falló el internet, si el servidor dio error 500, o si ejecutamos el 'throw new Error' de arriba
-    errorSound.currentTime = 0; 
-    errorSound.play().catch(() => {}); // Ejecuta tu sonido de error configurado
-
-    if (status) {
-      document.getElementById('contenedor-camara-global').style.display = 'block';
-      status.innerHTML = `❌ Error: ${error.message}`;
-      status.className = "text-danger small fw-bold m-0";
-    }
-  }
-}
- 
 
     async function cerrarSesion() { await detenerCamara(); claveAdministrador = ""; cambiarVista('vista-catalogo'); }
 
@@ -530,14 +524,15 @@
       const tbody = document.getElementById('tabla-inventario');
       if (Array.isArray(productos) && Array.isArray(inventario) && tbody) {
         tbody.innerHTML = productos.map(p => {
-           let stockSucursal = inventario.filter(inv => inv.codigo === p.codigo);
+           // Mapeo blindado contra strings y números puros
+           let stockSucursal = inventario.filter(inv => String(inv.codigo).trim().toUpperCase() === String(p.codigo).trim().toUpperCase());
            if(stockSucursal.length === 0) return `<tr><td>${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td colspan="4" class="text-center text-muted text-uppercase small">Sin inventario asignado</td></tr>`;
            return stockSucursal.map(inv => `<tr><td class="fw-bold">${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td><span class="badge bg-secondary">${inv.sucursal}</span></td><td>Bs. ${inv.pMayor}</td><td>Bs. ${inv.pMenor}</td><td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td></tr>`).join('');
         }).join('');
       }
     }
 
-    setInterval(() => { llamarServidor('keepAlive'); }, 300000); // Mantenimiento automático de sesión cada 5 minutos
+    setInterval(() => { llamarServidor('keepAlive'); }, 300000); 
   </script>
 </body>
 </html>
