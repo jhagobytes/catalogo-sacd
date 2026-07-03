@@ -79,13 +79,17 @@
       <button class="btn btn-primary m-1" onclick="filtrarPorCategoria('TODO')">Todos</button>
     </div>
 
-    <!-- Contenedor de Productos -->
-    <div class="row g-4" id="contenedor-productos">
-      <div class="col-12 text-center mt-5"><div class="spinner-border text-primary"></div></div>
+   <!-- Contenedor de Productos -->
+<div class="row g-4" id="contenedor-productos" style="transition: opacity 0.3s ease-in-out;">
+  <div class="col-12 text-center mt-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
     </div>
-    
-    <div id="contenedor-ver-mas" class="text-center mt-4"></div>
   </div>
+</div>
+
+<!-- Contenedor para el botón Ver Más -->
+<div id="contenedor-ver-mas" class="text-center mt-4"></div>
 
 
   <!-- ==========================================
