@@ -66,7 +66,10 @@
   <div id="vista-admin" class="container" style="max-width: 1200px; display: none;">
     <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
       <h2 class="text-primary m-0 fw-bold fs-4">Panel Administrativo SACD</h2>
-      <button class="btn btn-sm btn-outline-danger fw-bold" onclick="cerrarSesion()">🚪 Cerrar Sesión</button>
+      <div>
+        <button class="btn btn-sm btn-outline-warning fw-bold me-2" onclick="forzarLimpiarCacheUI()">🧼 Limpiar Caché</button>
+        <button class="btn btn-sm btn-outline-danger fw-bold" onclick="cerrarSesion()">🚪 Cerrar Sesión</button>
+      </div>
     </div>
 
     <!-- 📷 CONTENEDOR DE CÁMARA (Oculto por defecto para ahorrar batería) -->
@@ -193,7 +196,7 @@
 
     async function llamarServidor(operacion, datosExtra = {}) {
       try {
-        const payload = { op: operacion, clave: claveAdministrador, ...datosExtra };
+        const payload = { op: operation = operacion, clave: claveAdministrador, ...datosExtra };
         const respuesta = await fetch(URL_API, { method: 'POST', mode: 'cors', cache: 'no-store', headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: JSON.stringify(payload) });
         if (!respuesta.ok) throw new Error("Error HTTP");
         return await respuesta.json();
@@ -221,8 +224,8 @@
     }
 
     window.onload = async function() {
-      const categorias = await llamarServidor('obtenerCategoriasFiltro');
-      if (categorias) renderizarCategorias(categorias);
+      const categories = await llamarServidor('obtenerCategoriasFiltro');
+      if (categories) renderizarCategorias(categories);
       filtrarPorCategoria('TODO');
     };
 
@@ -394,7 +397,16 @@
       boton.disabled = false; boton.innerHTML = "GUARDAR NUEVO PRODUCTO";
       if(res) {
         alert(res.mensaje);
-        if (!res.mensaje.startsWith("ERROR")) { document.getElementById('formNuevo').reset(); document.getElementById('preview-container').style.display = 'none'; document.getElementById('n_metodo_codigo').value = 'manual'; cambiarMetodo('nuevo'); }
+        if (!res.mensaje.startsWith("ERROR")) { 
+          document.getElementById('formNuevo').reset(); 
+          document.getElementById('preview-container').style.display = 'none'; 
+          document.getElementById('n_metodo_codigo').value = 'manual'; 
+          cambiarMetodo('nuevo'); 
+          
+          // 🚀 ACTUALIZACIÓN AUTOMÁTICA DE VISTAS (CLIENTE Y ADMIN)
+          await cargarTablaAdmin();
+          filtrarPorCategoria('TODO');
+        }
       }
     }
 
@@ -407,7 +419,29 @@
       boton.disabled = false; boton.innerHTML = "ACTUALIZAR INVENTARIO";
       if(res) {
         alert(res.mensaje);
-        if (res.mensaje.includes("Éxito")) { document.getElementById('formActualizar').reset(); document.getElementById('a_metodo_codigo').value = 'manual'; cambiarMetodo('actualizar'); await cargarTablaAdmin(); }
+        if (res.mensaje.includes("Éxito")) { 
+          document.getElementById('formActualizar').reset(); 
+          document.getElementById('a_metodo_codigo').value = 'manual'; 
+          cambiarMetodo('actualizar'); 
+          
+          // 🚀 ACTUALIZACIÓN AUTOMÁTICA DE VISTAS (CLIENTE Y ADMIN)
+          await cargarTablaAdmin(); 
+          filtrarPorCategoria('TODO');
+        }
+      }
+    }
+
+    // 🧼 FUNCIÓN PARA FORZAR LA LIMPIEZA DESDE LA INTERFAZ
+    async function forzarLimpiarCacheUI() {
+      if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
+      
+      const res = await llamarServidor('forzarLimpiezaCache');
+      if (res && res.exito) {
+        alert(res.mensaje);
+        await cargarTablaAdmin();
+        filtrarPorCategoria('TODO');
+      } else {
+        alert("❌ No se pudo restablecer la caché. Revisa la contraseña o la conexión.");
       }
     }
 
