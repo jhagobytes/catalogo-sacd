@@ -116,14 +116,14 @@
             <div class="col-md-6"><label class="form-label fw-bold">Nombre del Producto</label><input type="text" id="n_nombre" class="form-control" required></div>
             <div class="col-md-6"><label class="form-label fw-bold">Marca</label><input type="text" id="n_marca" class="form-control" required></div>
             <div class="col-12">
-              <label class="form-label fw-bold">URL Imagen</label><input type="url" id="n_url" class="form-control" onblur="previsualizarImagen()" required>
+              <label class="form-label fw-bold">URL Imagen (Opcional)</label><input type="url" id="n_url" class="form-control" onblur="previsualizarImagen()">
               <div id="preview-container" class="mt-2 text-center" style="display:none;"><img id="img-preview" src="" alt="Vista previa" style="max-height: 120px; border-radius: 8px;"></div>
             </div>
-            <div class="col-12"><label class="form-label fw-bold">Características</label><textarea id="n_caracteristicas" class="form-control" rows="2"></textarea></div>
+            <div class="col-12"><label class="form-label fw-bold">Características</label><textarea id="n_caracteristicas" class="form-control" rows="2" required></textarea></div>
             <div class="col-md-3"><label class="form-label fw-bold">Sucursal</label><select id="n_sucursal" class="form-select sucursal-select" required></select></div>
-            <div class="col-md-3"><label class="form-label fw-bold">Precio Mayor</label><input type="number" id="n_pmayor" class="form-control" step="0.01" required></div>
-            <div class="col-md-3"><label class="form-label fw-bold">Precio Menor</label><input type="number" id="n_pmenor" class="form-control" step="0.01" required></div>
-            <div class="col-md-3"><label class="form-label fw-bold">Stock</label><input type="number" id="n_stock" class="form-control" placeholder="0" min="0" required></div>
+            <div class="col-md-3"><label class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="n_pmayor" class="form-control" step="0.01"></div>
+            <div class="col-md-3"><label class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="n_pmenor" class="form-control" step="0.01"></div>
+            <div class="col-md-3"><label class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="n_stock" class="form-control" placeholder="0" min="0"></div>
             <div class="col-12 mt-4"><button type="button" id="btnGuardar" class="btn btn-primary w-100 py-2 fw-bold" onclick="guardarNuevo()">GUARDAR NUEVO PRODUCTO</button></div>
           </div>
         </form>
@@ -149,9 +149,9 @@
               <select id="a_sucursal" class="form-select sucursal-select" required></select>
             </div>
             <hr class="mt-4">
-            <div class="col-md-4"><label class="form-label fw-bold">Stock</label><input type="number" id="a_stock" class="form-control" min="0" required></div>
-            <div class="col-md-4"><label class="form-label fw-bold">Precio Mayor</label><input type="number" id="a_pmayor_upd" class="form-control" step="0.01" required></div>
-            <div class="col-md-4"><label class="form-label fw-bold">Precio Menor</label><input type="number" id="a_pmenor_upd" class="form-control" step="0.01" required></div>
+            <div class="col-md-4"><label class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="a_stock" class="form-control" min="0"></div>
+            <div class="col-md-4"><label class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="a_pmayor_upd" class="form-control" step="0.01"></div>
+            <div class="col-md-4"><label class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="a_pmenor_upd" class="form-control" step="0.01"></div>
             <div class="col-12 mt-4"><button type="button" id="btnActualizar" class="btn btn-success w-100 py-2 fw-bold" onclick="guardarActualizacion()">ACTUALIZAR INVENTARIO</button></div>
           </div>
         </form>
@@ -252,15 +252,11 @@
       }
     }
 
-    // =========================================================================
-    // 🛡️ MOTOR DE BUSQUEDA LOCAL TOTALMENTE BLINDADO CONTRA TIPOS MULTIPLES
-    // =========================================================================
     function renderizarCatalogoLocal() {
       document.getElementById('contenedor-productos').style.opacity = "1";
       
       let productosFiltrados = Array.isArray(catalogoCompleto) ? catalogoCompleto : [];
       
-      // 1. Filtro seguro de categoría
       if (categoriaSeleccionada !== "TODO") {
         productosFiltrados = productosFiltrados.filter(p => {
           const catProducto = p.categoria ? String(p.categoria).toUpperCase().trim() : "";
@@ -268,7 +264,6 @@
         });
       }
       
-      // 2. Filtro seguro de buscador dinámico (Forzado a String a prueba de errores)
       if (busquedaActual && busquedaActual.trim() !== "") {
         const query = busquedaActual.toLowerCase().trim();
         productosFiltrados = productosFiltrados.filter(p => {
@@ -284,7 +279,6 @@
         });
       }
       
-      // 3. Paginación segmentada
       const totalProductos = productosFiltrados.length;
       const fin = (paginaActual + 1) * ITEMS_PER_PAGE;
       const productosPagina = productosFiltrados.slice(0, fin);
@@ -339,9 +333,6 @@
     }
     function abrirWhatsApp(numero, nombre, cod) { window.open(`https://wa.me/${numero}?text=${encodeURIComponent(`¡Hola, ${nombre}! Estoy interesado en el producto: ${cod}. ¿Tienen disponibilidad?`)}`, '_blank'); }
 
-    // =========================================================================
-    // LÓGICA DE MÉTODOS Y CÁMARA (ADMIN)
-    // =========================================================================
     async function inicializarAdmin() {
       const listas = await llamarServidor('obtenerListasAdmin');
       if (listas) llenarSelects(listas);
@@ -434,12 +425,18 @@
     async function guardarNuevo() {
       const boton = document.getElementById('btnGuardar');
       const datos = { codigo: document.getElementById('n_codigo').value, prefijo: document.getElementById('n_categoria').value, nombre: document.getElementById('n_nombre').value, marca: document.getElementById('n_marca').value, url: document.getElementById('n_url').value, caracteristicas: document.getElementById('n_caracteristicas').value, sucursal: document.getElementById('n_sucursal').value, pMayor: document.getElementById('n_pmayor').value, pMenor: document.getElementById('n_pmenor').value, stock: document.getElementById('n_stock').value };
+      
       if(datos.codigo.includes("⏳") || datos.codigo.includes("⚠️")) { alert("Espera a que el código se genere."); return; }
-      if(!datos.codigo || !datos.prefijo || !datos.nombre || !datos.stock) { alert("Completa los campos obligatorios."); return; }
+      
+      // Validación reducida: Solo se exige código, prefijo, nombre, marca y sucursal.
+      if(!datos.codigo || !datos.prefijo || !datos.nombre || !datos.marca || !datos.sucursal || !datos.caracteristicas) { 
+        alert("Completa los campos obligatorios principales (Código, Nombre, Marca, Sucursal, etc). Precios, stock y URL son opcionales."); return; 
+      }
 
       boton.disabled = true; boton.innerHTML = "Procesando...";
       const res = await llamarServidor('registrarNuevoProducto', { datos: datos });
       boton.disabled = false; boton.innerHTML = "GUARDAR NUEVO PRODUCTO";
+      
       if(res) {
         alert(res.mensaje);
         if (!res.mensaje.startsWith("ERROR")) { 
@@ -457,10 +454,14 @@
     async function guardarActualizacion() {
       const boton = document.getElementById('btnActualizar');
       const datos = { codigo: document.getElementById('a_codigo').value, sucursal: document.getElementById('a_sucursal').value, stock: document.getElementById('a_stock').value, pMayor: document.getElementById('a_pmayor_upd').value, pMenor: document.getElementById('a_pmenor_upd').value };
-      if(!datos.codigo || !datos.sucursal) { alert("Código y sucursal obligatorios."); return; }
+      
+      // Solo se exige código y sucursal. Lo demás puede ir en blanco.
+      if(!datos.codigo || !datos.sucursal) { alert("El código y la sucursal son obligatorios para saber qué actualizar."); return; }
+      
       boton.disabled = true; boton.innerHTML = "Actualizando...";
       const res = await llamarServidor('actualizarInventario', { datos: datos });
       boton.disabled = false; boton.innerHTML = "ACTUALIZAR INVENTARIO";
+      
       if(res) {
         alert(res.mensaje);
         if (res.mensaje.includes("Éxito")) { 
@@ -524,10 +525,9 @@
       const tbody = document.getElementById('tabla-inventario');
       if (Array.isArray(productos) && Array.isArray(inventario) && tbody) {
         tbody.innerHTML = productos.map(p => {
-           // Mapeo blindado contra strings y números puros
            let stockSucursal = inventario.filter(inv => String(inv.codigo).trim().toUpperCase() === String(p.codigo).trim().toUpperCase());
            if(stockSucursal.length === 0) return `<tr><td>${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td colspan="4" class="text-center text-muted text-uppercase small">Sin inventario asignado</td></tr>`;
-           return stockSucursal.map(inv => `<tr><td class="fw-bold">${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td><span class="badge bg-secondary">${inv.sucursal}</span></td><td>Bs. ${inv.pMayor}</td><td>Bs. ${inv.pMenor}</td><td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td></tr>`).join('');
+           return stockSucursal.map(inv => `<tr><td class="fw-bold">${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td><span class="badge bg-secondary">${inv.sucursal}</span></td><td>Bs. ${inv.pMayor || "-"}</td><td>Bs. ${inv.pMenor || "-"}</td><td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td></tr>`).join('');
         }).join('');
       }
     }
