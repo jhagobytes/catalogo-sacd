@@ -617,42 +617,46 @@
     }
 
     async function forzarLimpiarCacheUI() {
-      if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
-      const status = document.getElementById('status');
-      try {
-        if (status) {
-          document.getElementById('contenedor-camara-global').style.display = 'block'; 
-          status.innerHTML = "⏳ Restableciendo caché en el servidor...";
-          status.className = "text-warning small fw-bold m-0";
-        }
+  if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
+  
+  // --- NUEVA LÍNEA: Borramos el caché local del navegador ---
+  localStorage.removeItem("catalogo_sacd_local");
 
-        const res = await llamarServidor('forzarLimpiezaCache');
-        if (!res || !res.exito) {
-          throw new Error(res ? res.mensaje : "El servidor no envió una respuesta válida.");
-        }
-
-        if (status) {
-          status.innerHTML = `✅ ${res.mensaje}`;
-          status.className = "text-success small fw-bold m-0";
-        }
-
-        await cargarTablaAdmin();
-        await cargarCatalogoServidor();
-
-        setTimeout(() => {
-          if (status && !camaraActiva) document.getElementById('contenedor-camara-global').style.display = 'none';
-        }, 4000);
-
-      } catch (error) {
-        errorSound.currentTime = 0; 
-        errorSound.play().catch(() => {}); 
-        if (status) {
-          document.getElementById('contenedor-camara-global').style.display = 'block';
-          status.innerHTML = `❌ Error: ${error.message}`;
-          status.className = "text-danger small fw-bold m-0";
-        }
-      }
+  const status = document.getElementById('status');
+  try {
+    if (status) {
+      document.getElementById('contenedor-camara-global').style.display = 'block'; 
+      status.innerHTML = "⏳ Restableciendo caché en el servidor y local...";
+      status.className = "text-warning small fw-bold m-0";
     }
+
+    const res = await llamarServidor('forzarLimpiezaCache');
+    if (!res || !res.exito) {
+      throw new Error(res ? res.mensaje : "El servidor no envió una respuesta válida.");
+    }
+
+    if (status) {
+      status.innerHTML = `✅ ${res.mensaje}`;
+      status.className = "text-success small fw-bold m-0";
+    }
+
+    await cargarTablaAdmin();
+    await cargarCatalogoServidor();
+
+    setTimeout(() => {
+      if (status && !camaraActiva) document.getElementById('contenedor-camara-global').style.display = 'none';
+    }, 4000);
+
+  } catch (error) {
+    errorSound.currentTime = 0; 
+    errorSound.play().catch(() => {}); 
+    if (status) {
+      document.getElementById('contenedor-camara-global').style.display = 'block';
+      status.innerHTML = `❌ Error: ${error.message}`;
+      status.className = "text-danger small fw-bold m-0";
+    }
+  }
+}
 
     async function cerrarSesion() { await detenerCamara(); claveAdministrador = ""; cambiarVista('vista-catalogo'); }
 
