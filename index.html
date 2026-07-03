@@ -438,22 +438,31 @@
 }
 
     async function pedirPagina() {
-      mostrarCargando(true);
-      let resultado;
-      if (busquedaActual.length > 0) {
-        resultado = await llamarServidor('buscarProductos', { texto: busquedaActual, pagina: paginaActual });
-      } else {
-        resultado = await llamarServidor('obtenerProductosPorPagina', { categoria: categoriaSeleccionada, pagina: paginaActual });
-      }
-      if (resultado) dibujarTarjetas(resultado);
-      else mostrarCargando(false);
-    }
+  mostrarCargando(true);
+  
+  // Aplicamos opacidad antes de llamar al servidor
+  document.getElementById('contenedor-productos').style.opacity = "0.5";
+
+  let resultado = await llamarServidor(busquedaActual.length > 0 ? 'buscarProductos' : 'obtenerProductosPorPagina', 
+                                      { texto: busquedaActual, categoria: categoriaSeleccionada, pagina: paginaActual });
+
+  if (resultado) {
+    dibujarTarjetas(resultado);
+  } else {
+    // SI FALLA: Restauramos la opacidad y mostramos mensaje
+    document.getElementById('contenedor-productos').style.opacity = "1";
+    document.getElementById('contenedor-productos').innerHTML = 
+      `<div class="col-12 text-center text-danger mt-5">Error de conexión. Reintentando...</div>`;
+    mostrarCargando(false);
+  }
+}
 
     function cargarMas() { paginaActual++; pedirPagina(); }
 
     function dibujarTarjetas(resultado) {
       const contenedor = document.getElementById('contenedor-productos');
       const contenedorBoton = document.getElementById('contenedor-ver-mas');
+      contenedor.style.opacity = "1";
       if (paginaActual === 0) contenedor.innerHTML = "";
       
       if (resultado.productos.length === 0 && paginaActual === 0) {
@@ -741,6 +750,13 @@
     console.error("Error: 'productos' no es un array o no se encontró el tbody.");
   }
 }
+   // Ping para mantener la sesión viva
+  setInterval(() => {
+  console.log("Enviando ping de mantenimiento...");
+  // Llamamos a una función vacía en el servidor solo para despertar la conexión
+  google.script.run.keepAlive();
+},300000); // 5 minutos en milisegundos 
+    
 </script>
 </body>
 </html>
