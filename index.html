@@ -370,7 +370,6 @@
 
       resultado.productos.forEach(p => {
         const cantidadStock = (p.stock !== undefined && p.stock !== null) ? parseInt(p.stock) : 0;
-        
         // Si hay varias URLs separadas por coma, la tarjeta principal solo muestra la primera para no romperse
         const miniatura = (p.url || "").split(',')[0].trim();
 
@@ -387,7 +386,6 @@
               
               <div class="mt-auto d-flex justify-content-between align-items-center gap-2">
                 ${obtenerEtiquetaStock(cantidadStock)}
-                ${botonPrincipal}
               </div>
             </div>
           </div>`;
