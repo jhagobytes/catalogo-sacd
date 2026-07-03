@@ -72,7 +72,7 @@
       </div>
     </div>
 
-    <!-- 📷 CONTENEDOR DE CÁMARA (Oculto por defecto para ahorrar batería) -->
+    <!-- 📷 CONTENEDOR DE CÁMARA -->
     <div id="contenedor-camara-global" class="mb-4 bg-white p-3 rounded shadow-sm" style="display: none; border: 2px dashed #0d6efd;">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <p id="status" class="text-primary small fw-bold m-0">⏳ Iniciando cámara...</p>
@@ -91,8 +91,6 @@
       <div class="tab-pane fade show active" id="nuevo" role="tabpanel">
         <form id="formNuevo">
           <div class="row g-3">
-            
-            <!-- SELECTOR DE MÉTODO -->
             <div class="col-md-4">
               <label class="form-label fw-bold text-secondary">1. Método de Código</label>
               <select id="n_metodo_codigo" class="form-select border-primary text-primary fw-bold" onchange="cambiarMetodo('nuevo')">
@@ -101,12 +99,10 @@
                 <option value="scanner">📷 Escanear con Cámara</option>
               </select>
             </div>
-            <!-- CATEGORÍA -->
             <div class="col-md-4">
               <label class="form-label fw-bold text-secondary">2. Categoría</label>
               <select id="n_categoria" class="form-select" onchange="categoriaCambiada()" required></select>
             </div>
-            <!-- CÓDIGO FINAL -->
             <div class="col-md-4">
               <label class="form-label fw-bold text-primary">3. Código Resultante</label>
               <div class="input-group">
@@ -117,7 +113,6 @@
 
             <hr class="mt-4">
             
-            <!-- RESTO DEL FORMULARIO -->
             <div class="col-md-6"><label class="form-label fw-bold">Nombre del Producto</label><input type="text" id="n_nombre" class="form-control" required></div>
             <div class="col-md-6"><label class="form-label fw-bold">Marca</label><input type="text" id="n_marca" class="form-control" required></div>
             <div class="col-12">
@@ -180,6 +175,9 @@
   <script>
     const URL_API = "https://script.google.com/macros/s/AKfycby-ykR3U5swKoOOYOU5kB9etPkxNuVQfbxmJ5XkNLM80-NrtpYWVKNKmPzUK2uKhvKwXA/exec"; 
     
+    let catalogoCompleto = []; // Cache local del lado del cliente
+    const ITEMS_PER_PAGE = 12; // Paginación optimizada de 12 en 12
+    
     let claveAdministrador = ""; let paginaActual = 0; let categoriaSeleccionada = "TODO"; let busquedaActual = ""; let timerBusqueda;
     let html5QrCode = null; let camaraActiva = false; let targetInputActual = "n_codigo"; 
     let ultimoEscaneoTime = 0; const COOLDOWN_TIME = 1500; 
@@ -196,11 +194,11 @@
 
     async function llamarServidor(operacion, datosExtra = {}) {
       try {
-        const payload = { op: operation = operacion, clave: claveAdministrador, ...datosExtra };
+        const payload = { op: operacion, clave: claveAdministrador, ...datosExtra };
         const respuesta = await fetch(URL_API, { method: 'POST', mode: 'cors', cache: 'no-store', headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: JSON.stringify(payload) });
         if (!respuesta.ok) throw new Error("Error HTTP");
         return await respuesta.json();
-      } catch (error) { console.error("Fallo silencioso:", error); return null; }
+      } catch (error) { console.error("Fallo de red:", error); return null; }
     }
 
     function evaluarEnter(e) { if (e.key === 'Enter') procesarLogin(); }
@@ -216,7 +214,7 @@
       const respuesta = await llamarServidor('verificarClave', { clave: claveInput });
       if (respuesta && respuesta.exito) {
         claveAdministrador = claveInput; document.getElementById('clave').value = ""; btn.disabled = false; btn.innerHTML = "🔓 Entrar";
-        scanSound.play().catch(()=>{}); errorSound.play().catch(()=>{});
+        scanSound.play().catch(()=>{});
         cambiarVista('vista-admin'); inicializarAdmin();
       } else {
         errorDiv.textContent = respuesta ? respuesta.mensaje : "Error de red."; errorDiv.style.display = "block"; btn.disabled = false; btn.innerHTML = "🔓 Entrar";
@@ -226,7 +224,7 @@
     window.onload = async function() {
       const categories = await llamarServidor('obtenerCategoriasFiltro');
       if (categories) renderizarCategorias(categories);
-      filtrarPorCategoria('TODO');
+      await cargarCatalogoServidor();
     };
 
     function mostrarCargando(estado) {
@@ -240,42 +238,83 @@
       categorias.forEach(c => { contenedor.innerHTML += `<button class="btn btn-outline-primary m-1" onclick="filtrarPorCategoria('${c.nombre}')">${c.nombre}</button>`; });
     }
 
+    // =========================================================================
+    // MOTOR DE ULTRA ENRUTAMIENTO LOCAL (CLIENT-SIDE MOTOR SINCRO)
+    // =========================================================================
+    async function cargarCatalogoServidor() {
+      mostrarCargando(true);
+      document.getElementById('contenedor-productos').style.opacity = "0.5";
+      const resultado = await llamarServidor('obtenerTodoElCatalogo');
+      if (resultado && Array.isArray(resultado)) {
+        catalogoCompleto = resultado;
+        renderizarCatalogoLocal();
+      } else {
+        document.getElementById('contenedor-productos').style.opacity = "1";
+        document.getElementById('contenedor-productos').innerHTML = `<div class="col-12 text-center text-danger mt-5">Error de conexión. Reintentando cargar catálogo...</div>`;
+        mostrarCargando(false);
+      }
+    }
+
+    function renderizarCatalogoLocal() {
+      document.getElementById('contenedor-productos').style.opacity = "1";
+      
+      // 1. Aplicar filtro de categoría
+      let productosFiltrados = catalogoCompleto;
+      if (categoriaSeleccionada !== "TODO") {
+        productosFiltrados = productosFiltrados.filter(p => 
+          p.categoria && p.categoria.toUpperCase() === categoriaSeleccionada.toUpperCase()
+        );
+      }
+      
+      // 2. Aplicar filtro de buscador dinámico
+      if (busquedaActual.trim() !== "") {
+        const query = busquedaActual.toLowerCase().trim();
+        productosFiltrados = productosFiltrados.filter(p => 
+          (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+          (p.codigo && p.codigo.toLowerCase().includes(query)) ||
+          (p.marca && p.marca.toLowerCase().includes(query)) ||
+          (p.caracteristicas && p.caracteristicas.toLowerCase().includes(query))
+        );
+      }
+      
+      // 3. Segmentación por páginas (Paginación limpia)
+      const totalProductos = productosFiltrados.length;
+      const fin = (paginaActual + 1) * ITEMS_PER_PAGE;
+      const productosPagina = productosFiltrados.slice(0, fin);
+      const tieneMas = fin < totalProductos;
+      
+      dibujarTarjetas({ productos: productosPagina, tieneMas: tieneMas });
+      mostrarCargando(false);
+    }
+
     function filtrarPorCategoria(categoria) {
       categoriaSeleccionada = categoria; busquedaActual = ""; document.getElementById('buscador').value = ""; paginaActual = 0;
-      document.getElementById('contenedor-productos').innerHTML = ""; pedirPagina();
+      renderizarCatalogoLocal();
     }
 
     function filtrarProductos() {
       clearTimeout(timerBusqueda);
       timerBusqueda = setTimeout(() => {
         busquedaActual = document.getElementById('buscador').value; paginaActual = 0; 
-        document.getElementById('contenedor-productos').style.opacity = "0.5"; pedirPagina(); 
-      }, 500);
+        renderizarCatalogoLocal(); 
+      }, 300); 
     }
 
-    async function pedirPagina() {
-      mostrarCargando(true); document.getElementById('contenedor-productos').style.opacity = "0.5";
-      let resultado = await llamarServidor(busquedaActual.length > 0 ? 'buscarProductos' : 'obtenerProductosPorPagina', { texto: busquedaActual, categoria: categoriaSeleccionada, pagina: paginaActual });
-      if (resultado) dibujarTarjetas(resultado);
-      else { document.getElementById('contenedor-productos').style.opacity = "1"; document.getElementById('contenedor-productos').innerHTML = `<div class="col-12 text-center text-danger mt-5">Reintentando conexión...</div>`; mostrarCargando(false); }
-    }
-
-    function cargarMas() { paginaActual++; pedirPagina(); }
+    function cargarMas() { paginaActual++; renderizarCatalogoLocal(); }
 
     function dibujarTarjetas(resultado) {
       const contenedor = document.getElementById('contenedor-productos'); const contenedorBoton = document.getElementById('contenedor-ver-mas');
-      contenedor.style.opacity = "1"; 
       if (paginaActual === 0) contenedor.innerHTML = "";
-      if (resultado.productos.length === 0 && paginaActual === 0) { contenedor.innerHTML = `<div class="col-12 text-center text-muted mt-5"><h4>No se encontraron productos 🤔</h4></div>`; contenedorBoton.innerHTML = ""; return; }
+      if (resultado.productos.length === 0) { contenedor.innerHTML = `<div class="col-12 text-center text-muted mt-5"><h4>No se encontraron productos 🤔</h4></div>`; contenedorBoton.innerHTML = ""; return; }
 
       resultado.productos.forEach(p => {
         const cantidadStock = (p.stock !== undefined && p.stock !== null) ? parseInt(p.stock) : 0;
         const boton = (cantidadStock <= 0) ? `<button class="btn btn-secondary w-100" disabled>No disponible</button>` : `<button class="btn btn-success w-100 fw-bold" onclick="iniciarContacto('${p.codigo}')">📱 Pedir por WhatsApp</button>`;
         const col = document.createElement('div'); col.className = "col-sm-6 col-md-4 col-lg-3";
-        col.innerHTML = `<div class="card h-100 shadow-sm"><img src="${p.url}" class="card-img-top product-img"><div class="card-body d-flex flex-column"><span class="badge badge-marca mb-2 align-self-start">${p.marca}</span><h5 class="card-title fw-bold text-dark mb-1">${p.nombre}</h5><p class="text-muted small mb-2">Cód: ${p.codigo}</p><div class="mb-3">${obtenerEtiquetaStock(cantidadStock)}</div><div class="mt-auto">${boton}</div></div></div>`;
+        col.innerHTML = `<div class="card h-100 shadow-sm"><img src="${p.url}" class="card-img-top product-img" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'"><div class="card-body d-flex flex-column"><span class="badge badge-marca mb-2 align-self-start">${p.marca}</span><h5 class="card-title fw-bold text-dark mb-1" style="font-size:1.05rem;">${p.nombre}</h5><p class="text-muted small mb-2">Cód: ${p.codigo}</p><div class="mb-3">${obtenerEtiquetaStock(cantidadStock)}</div><div class="mt-auto">${boton}</div></div></div>`;
         contenedor.appendChild(col);
       });
-      contenedorBoton.innerHTML = resultado.tieneMas ? `<button class="btn btn-primary btn-lg" onclick="cargarMas()">Ver más productos</button>` : "";
+      contenedorBoton.innerHTML = resultado.tieneMas ? `<button class="btn btn-primary btn-lg px-4" onclick="cargarMas()">Ver más productos</button>` : "";
     }
 
     function obtenerEtiquetaStock(stock) {
@@ -299,9 +338,8 @@
     async function inicializarAdmin() {
       const listas = await llamarServidor('obtenerListasAdmin');
       if (listas) llenarSelects(listas);
-      cargarTablaAdmin(); setInterval(cargarTablaAdmin, 10000);
+      cargarTablaAdmin();
       
-      // Controlar apagado de cámara al cambiar pestañas
       document.getElementById('adminTabs').addEventListener('shown.bs.tab', async function (event) {
         await detenerCamara();
         if (event.target.id === 'nuevo-tab') {
@@ -321,9 +359,9 @@
     async function cambiarMetodo(pestaña) {
       const metodo = document.getElementById(pestaña === 'nuevo' ? 'n_metodo_codigo' : 'a_metodo_codigo').value;
       const input = document.getElementById(pestaña === 'nuevo' ? 'n_codigo' : 'a_codigo');
-      const btnRefresh = document.getElementById('btn-refresh-codigo'); // Solo existe en 'nuevo'
+      const btnRefresh = document.getElementById('btn-refresh-codigo');
 
-      await detenerCamara(); // Apagamos cámara por defecto al cambiar método
+      await detenerCamara();
 
       if (metodo === 'auto' && pestaña === 'nuevo') {
         input.readOnly = true; input.value = ""; btnRefresh.style.display = 'block';
@@ -403,9 +441,8 @@
           document.getElementById('n_metodo_codigo').value = 'manual'; 
           cambiarMetodo('nuevo'); 
           
-          // 🚀 ACTUALIZACIÓN AUTOMÁTICA DE VISTAS (CLIENTE Y ADMIN)
-          await cargarTablaAdmin();
-          filtrarPorCategoria('TODO');
+          await cargarTablaAdmin(); 
+          await cargarCatalogoServidor(); // Recarga síncronamente el catálogo local limpio
         }
       }
     }
@@ -424,26 +461,62 @@
           document.getElementById('a_metodo_codigo').value = 'manual'; 
           cambiarMetodo('actualizar'); 
           
-          // 🚀 ACTUALIZACIÓN AUTOMÁTICA DE VISTAS (CLIENTE Y ADMIN)
           await cargarTablaAdmin(); 
-          filtrarPorCategoria('TODO');
+          await cargarCatalogoServidor(); // Recarga síncronamente el catálogo local limpio
         }
       }
     }
-
-    // 🧼 FUNCIÓN PARA FORZAR LA LIMPIEZA DESDE LA INTERFAZ
     async function forzarLimpiarCacheUI() {
-      if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
-      
-      const res = await llamarServidor('forzarLimpiezaCache');
-      if (res && res.exito) {
-        alert(res.mensaje);
-        await cargarTablaAdmin();
-        filtrarPorCategoria('TODO');
-      } else {
-        alert("❌ No se pudo restablecer la caché. Revisa la contraseña o la conexión.");
-      }
+  // 1. Confirmación previa del usuario
+  if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales de tu Google Sheets en la siguiente visita.")) return;
+
+  const status = document.getElementById('status');
+
+  try {
+    // Mostramos un estado visual de carga en la UI si el elemento existe
+    if (status) {
+      document.getElementById('contenedor-camara-global').style.display = 'block'; // Mostramos el contenedor si estaba oculto
+      status.innerHTML = "⏳ Restableciendo caché en el servidor...";
+      status.className = "text-warning small fw-bold m-0";
     }
+
+    // 2. Petición asíncrona al servidor
+    const res = await llamarServidor('forzarLimpiezaCache');
+    
+    // Si la respuesta no existe o el servidor devolvió exito: false, forzamos la caída al 'catch'
+    if (!res || !res.exito) {
+      throw new Error(res ? res.mensaje : "El servidor no envió una respuesta válida.");
+    }
+
+    // 3. Si todo salió bien:
+    if (status) {
+      status.innerHTML = `✅ ${res.mensaje}`;
+      status.className = "text-success small fw-bold m-0";
+    }
+
+    // Actualizamos las tablas y el catálogo local en segundo plano
+    await cargarTablaAdmin();
+    await cargarCatalogoServidor();
+
+    // Opcional: Ocultar el mensaje de éxito después de 4 segundos
+    setTimeout(() => {
+      if (status) document.getElementById('contenedor-camara-global').style.display = 'none';
+    }, 4000);
+
+  } catch (error) {
+    // 4. CAPTURA Y MANEJO DE ERRORES EN LA INTERFAZ
+    // Aquí cae si falló el internet, si el servidor dio error 500, o si ejecutamos el 'throw new Error' de arriba
+    errorSound.currentTime = 0; 
+    errorSound.play().catch(() => {}); // Ejecuta tu sonido de error configurado
+
+    if (status) {
+      document.getElementById('contenedor-camara-global').style.display = 'block';
+      status.innerHTML = `❌ Error: ${error.message}`;
+      status.className = "text-danger small fw-bold m-0";
+    }
+  }
+}
+ 
 
     async function cerrarSesion() { await detenerCamara(); claveAdministrador = ""; cambiarVista('vista-catalogo'); }
 
@@ -458,13 +531,13 @@
       if (Array.isArray(productos) && Array.isArray(inventario) && tbody) {
         tbody.innerHTML = productos.map(p => {
            let stockSucursal = inventario.filter(inv => inv.codigo === p.codigo);
-           if(stockSucursal.length === 0) return `<tr><td>${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td colspan="4" class="text-center text-muted">Sin inventario</td></tr>`;
+           if(stockSucursal.length === 0) return `<tr><td>${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td colspan="4" class="text-center text-muted text-uppercase small">Sin inventario asignado</td></tr>`;
            return stockSucursal.map(inv => `<tr><td class="fw-bold">${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td><span class="badge bg-secondary">${inv.sucursal}</span></td><td>Bs. ${inv.pMayor}</td><td>Bs. ${inv.pMenor}</td><td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td></tr>`).join('');
         }).join('');
       }
     }
 
-    setInterval(() => { console.log("Ping de mantenimiento..."); llamarServidor('keepAlive'); }, 300000); 
+    setInterval(() => { llamarServidor('keepAlive'); }, 300000); // Mantenimiento automático de sesión cada 5 minutos
   </script>
 </body>
 </html>
