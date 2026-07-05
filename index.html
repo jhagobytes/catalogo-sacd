@@ -6,11 +6,8 @@
   <title>RIMACELL | Wholesale Tech Accessories</title>
   <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzdhsdvs9/image/upload/v1783219890/favicon1.ico">
   
-  <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- FontAwesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -18,7 +15,6 @@
 </head>
 <body>
 
-  <!-- ========================================== NAVBAR GLOBAL (PÚBLICO) ========================================== -->
   <div id="nav-publico" style="display: block;">
     <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
       <div class="container-fluid px-4">
@@ -48,9 +44,7 @@
     </nav>
   </div>
 
-  <!-- ========================================== VISTA 1: INICIO ========================================== -->
   <div id="vista-inicio" style="display: block;">
-    <!-- HERO SECTION -->
     <section class="hero-section">
       <div class="container-fluid p-0">
         <div class="row g-0 align-items-center">
@@ -58,7 +52,6 @@
             <h1 class="hero-title">TU SOCIO DE CONFIANZA<br>EN ACCESORIOS TECNOLÓGICOS<br><span class="text-orange">VENTAS POR MAYOR</span></h1>
             <p class="hero-subtitle">Calidad superior. Precios competitivos. Suministro fiable para el crecimiento de su negocio.</p>
             
-            <!-- Botón redirigiendo a la vista Catálogo -->
             <a href="#" onclick="cambiarVista('vista-catalogo'); return false;" class="btn btn-brand-orange btn-lg rounded-pill px-5 py-3 mb-5 fs-5">Ver catálogo <i class="fa-solid fa-chevron-right ms-2"></i></a>
             
             <div class="row mt-4">
@@ -79,17 +72,15 @@
           
           <div class="col-lg-6">
             <div class="hero-image-wrapper">
-              <!--<img src="https://res.cloudinary.com/dzdhsdvs9/image/upload/v1783221440/Gemini_Generated_Image_9yfsig9yfsig9yfs_abefcn.png" alt="Tech Accessories" style="width: 80%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">-->
               <img src="https://res.cloudinary.com/dzdhsdvs9/image/upload/v1783221440/Gemini_Generated_Image_9yfsig9yfsig9yfs_abefcn.png" alt="Tech Accessories" class="img-floating" style="width: 80%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
             </div>
           </div>
         </div>
       </div>
     </section>
-    <!-- CARRUSEL DE MARCAS -->
+    
     <div class="brand-carousel-container fade-in">
       <div class="brand-track">
-        <!-- Duplica los logos para el efecto infinito -->
         <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg" alt="Xiaomi">
         <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" alt="Samsung">
         <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
@@ -105,7 +96,6 @@
       </div>
     </div>
 
-    <!-- ESTADÍSTICAS RÁPIDAS -->
     <section class="container my-5 fade-in">
       <div class="row text-center">
         <div class="col-md-4 mb-3">
@@ -123,11 +113,9 @@
       </div>
     </section>
 
-    <!-- PRODUCTOS DESTACADOS (Mockup) -->
     <section class="container my-5 fade-in">
       <h3 class="text-center mb-4">Productos <span class="text-orange">Destacados</span></h3>
       <div class="row g-4" id="productos-destacados-preview">
-         <!-- Aquí puedes dejar 3-4 tarjetas estáticas o llenarlas desde JS -->
          <div class="col-md-4">
             <div class="card h-100 shadow-sm border-0">
                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="z-index: 10;">¡Más Vendido!</span>
@@ -140,9 +128,8 @@
          </div>
       </div>
     </section>
-    <!-- BOTTOM FEATURES BAR -->
-    <section class="bottom-features fade-in"></section>
-    <!--<section class="bottom-features">-->
+
+    <section class="bottom-features fade-in">
       <div class="container">
         <div class="row">
           <div class="col-md-3 col-sm-6 b-feature-box">
@@ -165,13 +152,17 @@
       </div>
     </section>
   </div>
-  <!-- ========================================== VISTA 2: CATÁLOGO ========================================== -->
-<div id="vista-catalogo" style="display: none; padding-top: 2rem;">
   
-  <!-- AQUÍ AGREGAMOS EL CONTENEDOR PARA EVITAR QUE VAYA DE EXTREMO A EXTREMO -->
+  <div id="vista-catalogo" style="display: none; padding-top: 2rem;">
+  
   <div class="container">
     
-    <!-- NUEVOS FILTROS COMBINADOS -->
+    <div class="row mb-3 justify-content-center px-3">
+      <div class="col-md-7">
+        <input type="text" id="buscador" class="form-control form-control-lg rounded-pill shadow-sm text-center border-orange" placeholder="🔍 Buscar por nombre, marca o código..." onkeyup="filtrarProductos()">
+      </div>
+    </div>
+
     <div class="row mb-4 justify-content-center gap-2 px-3" id="contenedor-filtros">
       <div class="col-md-4">
         <select id="filtro-categoria" class="form-select form-select-lg rounded-pill border-0 shadow-sm text-center fw-bold text-primary" onchange="filtrarProductos()">
@@ -197,13 +188,7 @@
         
     <div id="contenedor-ver-mas" class="text-center mt-5"></div>
 
-  </div> <!-- CIERRE DEL CONTAINER -->
-  
-</div> <!-- CIERRE DE LA VISTA CATÁLOGO -->
-  
-
-  <!-- ========================================== VISTA 3: LOGIN ========================================== -->
-  <div id="vista-login" class="container" style="display: none;">
+  </div> </div> <div id="vista-login" class="container" style="display: none;">
     <div class="contenedor-login">
       <div class="login-card text-center border-0">
         <div class="mb-3"><i class="fa-solid fa-cube text-orange fs-1"></i></div>
@@ -220,17 +205,15 @@
     </div>
   </div>
 
-  <!-- ========================================== VISTA 4: ADMIN ========================================== -->
   <div id="vista-admin" class="container" style="max-width: 1200px; display: none; margin-top: 2rem;">
     <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-4 rounded-4 shadow-sm border-0">
       <h2 class="m-0 fw-bold fs-3"><i class="fa-solid fa-shield-halved text-orange"></i> RIMACELL Panel de Administración </h2>
       <div>
         <button class="btn btn-outline-secondary fw-bold rounded-pill me-2" onclick="forzarLimpiarCacheUI()"><i class="fa-solid fa-broom"></i> Borrar cache</button>
-        <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar seción</button>
+        <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
       </div>
     </div>
 
-    <!-- 📷 CONTENEDOR DE CÁMARA / STATUS -->
     <div id="contenedor-camara-global" class="mb-4 bg-white p-3 rounded-4 shadow-sm" style="display: none; border: 2px dashed var(--color-orange);">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <p id="status" class="text-primary small fw-bold m-0">⏳ Iniciando cámara...</p>
@@ -245,12 +228,11 @@
     </ul>
 
     <div class="tab-content bg-white p-5 rounded-4 shadow-sm mb-5 border-0" id="adminTabsContent">
-      <!-- PESTAÑA: NUEVO PRODUCTO -->
       <div class="tab-pane fade show active" id="nuevo" role="tabpanel">
         <form id="formNuevo">
           <div class="row g-4">
             <div class="col-md-4">
-              <label class="form-label fw-bold text-secondary">1. Selecionar un Método de Código</label>
+              <label class="form-label fw-bold text-secondary">1. Seleccionar un Método de Código</label>
               <select id="n_metodo_codigo" class="form-select border-primary text-primary fw-bold rounded-3" onchange="cambiarMetodo('nuevo')">
                 <option value="manual" selected>✍️ Ingreso Manual</option>
                 <option value="auto">⚡ Generar Automáticamente</option>
@@ -281,23 +263,23 @@
             <div class="col-md-3"><label class="form-label fw-bold">Sucursal</label><select id="n_sucursal" class="form-select sucursal-select rounded-3" required></select></div>
             <div class="col-md-3"><label class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="n_pmayor" class="form-control rounded-3" step="0.01"></div>
             <div class="col-md-3"><label class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="n_pmenor" class="form-control rounded-3" step="0.01"></div>
-            <!-- NUEVO: SELECTOR DE ETIQUETAS -->
+            
             <div class="col-12 mt-4 bg-light p-3 rounded-3 border border-light">
-            <label class="form-label fw-bold text-primary"><i class="fa-solid fa-tags text-orange"></i> Etiquetas Visuales (Opcional)</label>
-            <div class="d-flex flex-wrap gap-3 mt-2" id="n_etiquetas">
-            <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="🔥 Lo más vendido" id="tag1"><label class="form-check-label fw-bold" for="tag1">🔥 Lo más vendido</label></div>
-            <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="✨ Nuevo" id="tag2"><label class="form-check-label fw-bold" for="tag2">✨ Nuevo</label></div>
-            <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="💎 Premium" id="tag3"><label class="form-check-label fw-bold" for="tag3">💎 Premium</label></div>
-            <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="⚡ Oferta" id="tag4"><label class="form-check-label fw-bold" for="tag4">⚡ Oferta</label></div>
-        </div>
-      </div>
+              <label class="form-label fw-bold text-primary"><i class="fa-solid fa-tags text-orange"></i> Etiquetas Visuales (Opcional)</label>
+              <div class="d-flex flex-wrap gap-3 mt-2" id="n_etiquetas">
+                <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="🔥 Lo más vendido" id="tag1"><label class="form-check-label fw-bold" for="tag1">🔥 Lo más vendido</label></div>
+                <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="✨ Nuevo" id="tag2"><label class="form-check-label fw-bold" for="tag2">✨ Nuevo</label></div>
+                <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="💎 Premium" id="tag3"><label class="form-check-label fw-bold" for="tag3">💎 Premium</label></div>
+                <div class="form-check"><input class="form-check-input etiqueta-checkbox" type="checkbox" value="⚡ Oferta" id="tag4"><label class="form-check-label fw-bold" for="tag4">⚡ Oferta</label></div>
+              </div>
+            </div>
+            
             <div class="col-md-3"><label class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="n_stock" class="form-control rounded-3" placeholder="0" min="0"></div>
             <div class="col-12 mt-5"><button type="button" id="btnGuardar" class="btn btn-brand-orange w-100 py-3 fw-bold rounded-pill" onclick="guardarNuevo()">GUARDAR NUEVO PRODUCTO</button></div>
           </div>
         </form>
       </div>
 
-      <!-- PESTAÑA: ACTUALIZAR INVENTARIO -->
       <div class="tab-pane fade" id="actualizar" role="tabpanel">
         <form id="formActualizar">
           <div class="row g-4">
@@ -339,7 +321,6 @@
 
   <div class="modal fade" id="modalVendedores" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content rounded-4 border-0 overflow-hidden"><div class="modal-header bg-success text-white border-0"><h5 class="modal-title font-heading fw-bold">Elegir Asesor</h5></div><div class="modal-body p-4"><div id="lista-vendedores"></div></div></div></div></div>
 
-  <!-- ========================================== MODAL DE DETALLES ========================================== -->
   <div class="modal fade" id="modalDetalles" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -367,53 +348,45 @@
       </div>
     </div>
   </div>
-  <!-- WIDGET FLOTANTE CARRITO -->
-<div id="widget-carrito" class="widget-carrito fade-in" onclick="abrirModalCarrito()" style="display: none;">
-  <div class="d-flex justify-content-between align-items-center w-100 px-3 py-2">
-    <div class="text-white d-flex align-items-center gap-2">
-      <i class="fa-solid fa-cart-shopping fs-4"></i>
-      <div class="d-flex flex-column lh-1">
-        <span class="fw-bold" id="widget-items">0 ítems</span>
-        <span class="small opacity-75">Cotización</span>
-      </div>
-    </div>
-    <button class="btn btn-light rounded-pill btn-sm fw-bold px-3 text-orange">Ver Pedido</button>
-  </div>
-</div>
-
-<!-- MODAL DEL CARRITO - FLUJO NUEVO -->
-<div class="modal fade" id="modalCarrito" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header bg-white border-bottom-0 pb-0">
-        <h5 class="modal-title fw-bold text-primary fs-4"><i class="fa-solid fa-clipboard-list text-orange"></i> Tu Cotización</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body pb-0">
-        <!-- Lista de productos añadidos -->
-        <ul id="lista-carrito" class="list-group list-group-flush mb-4"></ul>
-        
-        <!-- Contenedor del Flujo: Selección de Sucursal -->
-        <div class="bg-light p-3 rounded-4 mb-3 border border-light" id="contenedor-flujo-carrito" style="display: none;">
-          <div id="selector-sucursal-pedido">
-            <label class="form-label fw-bold text-secondary mb-2">1️⃣ ¿En qué sucursal deseas cotizar?</label>
-            <select id="sucursal-envio" class="form-select form-select-lg rounded-3 border-orange shadow-sm" onchange="cargarVendedores()">
-              <!-- Se llena dinámicamente -->
-            </select>
-          </div>
-          
-          <!-- Contenedor dinámico donde aparecerán los botones de los vendedores de la sucursal elegida -->
-          <div id="lista-vendedores-carrito" class="mt-4"></div>
+  
+  <div id="widget-carrito" class="widget-carrito fade-in" onclick="abrirModalCarrito()" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center w-100 px-3 py-2">
+      <div class="text-white d-flex align-items-center gap-2">
+        <i class="fa-solid fa-cart-shopping fs-4"></i>
+        <div class="d-flex flex-column lh-1">
+          <span class="fw-bold" id="widget-items">0 ítems</span>
+          <span class="small opacity-75">Cotización</span>
         </div>
       </div>
-      
-      <!-- Footer: Solo queda la acción de vaciar, el envío se hace desde el botón del vendedor -->
-      <div class="modal-footer bg-white border-top-0 d-flex justify-content-center p-3">
-        <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-4" onclick="vaciarCarrito()"><i class="fa-solid fa-trash"></i> Vaciar Carrito</button>
+      <button class="btn btn-light rounded-pill btn-sm fw-bold px-3 text-orange">Ver Pedido</button>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalCarrito" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-white border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold text-primary fs-4"><i class="fa-solid fa-clipboard-list text-orange"></i> Tu Cotización</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pb-0">
+          <ul id="lista-carrito" class="list-group list-group-flush mb-4"></ul>
+          
+          <div class="bg-light p-3 rounded-4 mb-3 border border-light" id="contenedor-flujo-carrito" style="display: none;">
+            <div id="selector-sucursal-pedido">
+              <label class="form-label fw-bold text-secondary mb-2">1️⃣ ¿En qué sucursal deseas cotizar?</label>
+              <select id="sucursal-envio" class="form-select form-select-lg rounded-3 border-orange shadow-sm" onchange="cargarVendedores()">
+              </select>
+            </div>
+            <div id="lista-vendedores-carrito" class="mt-4"></div>
+          </div>
+        </div>
+        <div class="modal-footer bg-white border-top-0 d-flex justify-content-center p-3">
+          <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-4" onclick="vaciarCarrito()"><i class="fa-solid fa-trash"></i> Vaciar Carrito</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
   <script src="script.js"></script>
 </body>
 </html>
