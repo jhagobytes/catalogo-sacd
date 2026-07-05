@@ -605,9 +605,13 @@ async function guardarNuevo() {
   try {
     const obtenerValorSeguro = (id) => {
       const elemento = document.getElementById(id);
-      if (!elemento) { return ""; }
-      return elemento.value;
+      return elemento ? elemento.value : "";
     };
+
+    // SINCRONIZACIÓN: Captura de etiquetas (Checkboxes en HTML)
+    const etiquetasSeleccionadas = Array.from(document.querySelectorAll('.etiqueta-checkbox:checked'))
+                                        .map(cb => cb.value)
+                                        .join(','); // Convertimos el array a un string separado por comas
 
     const datosNuevoProducto = {
       codigo: obtenerValorSeguro('n_codigo'), 
@@ -620,7 +624,7 @@ async function guardarNuevo() {
       stock: obtenerValorSeguro('n_stock'),
       pMayor: obtenerValorSeguro('n_pmayor'),
       pMenor: obtenerValorSeguro('n_pmenor'),
-      etiquetas: [] 
+      etiquetas: etiquetasSeleccionadas // Enviamos el string listo al backend
     };
 
     if (!datosNuevoProducto.codigo || !datosNuevoProducto.nombre) {
@@ -633,7 +637,6 @@ async function guardarNuevo() {
     alert(respuesta ? respuesta.mensaje : "Error de comunicación con el servidor.");
 
     if (respuesta && respuesta.mensaje && respuesta.mensaje.includes("Éxito")) {
-      // CORRECCIÓN APLICADA: ID DEL FORMULARIO CORRECTO
       const formulario = document.getElementById('formNuevo');
       if (formulario) formulario.reset();
       
@@ -654,7 +657,6 @@ async function guardarNuevo() {
     }
   }
 }
-
 function agregarAlCarrito(codigo, nombre) {
   const item = carritoCotizacion.find(i => i.codigo === codigo);
   if (item) item.cantidad++; else carritoCotizacion.push({codigo, nombre, cantidad: 1});
