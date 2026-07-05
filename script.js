@@ -600,59 +600,78 @@ function animarContador(idElemento, valorFinal) {
   }, 30);
 }
 async function guardarNuevo() {
-  // 1. Evitar múltiples clics cambiando el texto del botón (opcional pero recomendado)
   const btnGuardar = document.querySelector('[onclick="guardarNuevo()"]');
-  const textoOriginal = btnGuardar.innerHTML;
-  btnGuardar.innerHTML = "Guardando...";
-  btnGuardar.disabled = true;
+  const textoOriginal = btnGuardar ? btnGuardar.innerHTML : "Guardar";
+  
+  if (btnGuardar) {
+    btnGuardar.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Guardando...`;
+    btnGuardar.disabled = true;
+  }
 
   try {
-    // 2. Capturar los datos del formulario (¡Revisa que los IDs coincidan con tu HTML!)
-    const datosNuevoProducto = {
-      codigo: document.getElementById('codigoProducto').value, 
-      nombre: document.getElementById('nombreProducto').value,
-      prefijo: document.getElementById('categoriaProducto').value, // O el ID de tu select de categorías
-      marca: document.getElementById('marcaProducto').value,
-      caracteristicas: document.getElementById('caracteristicasProducto').value,
-      url: document.getElementById('urlProducto').value,
-      sucursal: document.getElementById('sucursalProducto').value,
-      stock: document.getElementById('stockProducto').value,
-      pMayor: document.getElementById('pMayorProducto').value,
-      pMenor: document.getElementById('pMenorProducto').value,
-      etiquetas: [] // Si usas un sistema de etiquetas en el front, captúralo aquí
+    // Función salvavidas: Si el ID no existe en el HTML, no rompe el código.
+    const obtenerValorSeguro = (id) => {
+      const elemento = document.getElementById(id);
+      if (!elemento) {
+        console.warn(`⚠️ Aviso: El campo con id '${id}' no existe en el HTML.`);
+        return ""; 
+      }
+      return elemento.value;
     };
 
-    // 3. Validación básica en el frontend
+    // Captura de datos usando los IDs correctos (prefijo n_ para "nuevo")
+    const datosNuevoProducto = {
+      codigo: obtenerValorSeguro('n_codigo'), 
+      nombre: obtenerValorSeguro('n_nombre'),
+      prefijo: obtenerValorSeguro('n_categoria'), 
+      marca: obtenerValorSeguro('n_marca'),
+      caracteristicas: obtenerValorSeguro('n_caracteristicas'),
+      url: obtenerValorSeguro('n_url'),
+      sucursal: obtenerValorSeguro('n_sucursal'),
+      stock: obtenerValorSeguro('n_stock'),
+      pMayor: obtenerValorSeguro('n_pmayor'),
+      pMenor: obtenerValorSeguro('n_pmenor'),
+      etiquetas: [] 
+    };
+
+    // Validación básica
     if (!datosNuevoProducto.codigo || !datosNuevoProducto.nombre) {
       alert("Por favor, completa al menos el Código y el Nombre del producto.");
+      if (btnGuardar) { btnGuardar.innerHTML = textoOriginal; btnGuardar.disabled = false; }
       return;
     }
 
-    // 4. Enviar los datos a Google Apps Script usando tu función de servidor
-    // (Asegúrate de que 'llamarServidor' sea el nombre de tu función fetch)
+    // Enviar los datos a Google Apps Script
     const respuesta = await llamarServidor('registrarNuevoProducto', { datos: datosNuevoProducto });
 
-    // 5. Mostrar la respuesta del servidor (Éxito o Error)
-    alert(respuesta.mensaje);
+    // Mostrar la respuesta del servidor
+    alert(respuesta ? respuesta.mensaje : "Error de comunicación con el servidor.");
 
-    // Si tuvo éxito, limpiamos el formulario y recargamos
-    if (respuesta.mensaje && respuesta.mensaje.includes("Éxito")) {
-      document.getElementById('formNuevoProducto').reset(); // Asegúrate de poner el ID de tu etiqueta <form>
-      // Opcional: Cerrar el modal usando Bootstrap
-      // const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoProducto'));
-      // if (modal) modal.hide();
+    // Si tuvo éxito, limpiamos el formulario y recargamos la tabla
+    if (respuesta && respuesta.mensaje && respuesta.mensaje.includes("Éxito")) {
+      const formulario = document.getElementById('formNuevoProducto');
+      if (formulario) formulario.reset();
+      
+      // Limpiar la imagen de previsualización si existe
+      const imgPreview = document.getElementById('preview-container');
+      if (imgPreview) imgPreview.style.display = 'none';
+
+      // Refrescar el catálogo y la tabla de admin automáticamente
+      await cargarTablaAdmin();
+      await cargarCatalogoServidor();
     }
 
   } catch (error) {
-    console.error("Error al guardar:", error);
-    alert("Hubo un error de conexión al intentar guardar.");
+    console.error("Error crítico al guardar:", error);
+    alert("Hubo un error de conexión al intentar guardar. Revisa la consola.");
   } finally {
-    // Restaurar el botón
-    btnGuardar.innerHTML = textoOriginal;
-    btnGuardar.disabled = false;
+    // Restaurar el botón a la normalidad
+    if (btnGuardar) {
+      btnGuardar.innerHTML = textoOriginal;
+      btnGuardar.disabled = false;
+    }
   }
 }
-
 // ==========================================
 // LÓGICA DEL CARRITO INTELIGENTE Y FLUJO DE PEDIDO
 // ==========================================
