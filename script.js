@@ -126,6 +126,7 @@ async function cargarCatalogoServidor() {
   if (cacheData && cacheTime && (ahora - parseInt(cacheTime)) < TIEMPO_EXPIRACION) {
     catalogoCompleto = JSON.parse(cacheData);
     renderizarCatalogoLocal(); 
+    renderizarProductosDestacados(); // <-- Renderiza los destacados desde el caché
   } else {
     mostrarCargando(true); 
     if (contenedor) contenedor.style.opacity = "0.5"; 
@@ -137,6 +138,7 @@ async function cargarCatalogoServidor() {
       localStorage.setItem("catalogo_sacd_local", JSON.stringify(resultado));
       localStorage.setItem("catalogo_sacd_time", ahora.toString());
       renderizarCatalogoLocal(); 
+      renderizarProductosDestacados(); // <-- Renderiza los destacados desde el servidor
       if (contenedor) contenedor.style.opacity = "1";
       mostrarCargando(false);
     } else if (!cacheData) { 
@@ -149,6 +151,7 @@ async function cargarCatalogoServidor() {
        // Si falla pero hay caché viejo, lo usamos por emergencia
        catalogoCompleto = JSON.parse(cacheData);
        renderizarCatalogoLocal(); 
+       renderizarProductosDestacados(); // <-- Renderiza los destacados desde el caché de emergencia
        if (contenedor) contenedor.style.opacity = "1";
        mostrarCargando(false);
     }
@@ -788,6 +791,49 @@ function enviarWhatsAppAAsesor(numero, nombreAsesor) {
   mensaje += `%0A¿Me confirmas disponibilidad y los pasos a seguir? Quedo atento.`;
   
   window.open(`https://wa.me/${numero}?text=${mensaje}`, '_blank');
+}
+
+function renderizarProductosDestacados() {
+  const contenedor = document.getElementById('productos-destacados-preview');
+  if (!contenedor) return;
+
+  contenedor.innerHTML = ""; // Limpiar el contenedor
+
+  // Filtramos solo los productos que tengan al menos una etiqueta
+  const productosDestacados = catalogoCompleto.filter(p => p.etiquetas && p.etiquetas.length > 0);
+
+  if (productosDestacados.length === 0) {
+    contenedor.innerHTML = `<div class="col-12 text-center text-muted">No hay productos destacados en este momento.</div>`;
+    return;
+  }
+
+  // Opcional: Limitar a mostrar solo los primeros 3 o 4 productos en la página principal
+  const productosMostrar = productosDestacados.slice(0, 3); 
+
+  productosMostrar.forEach(p => {
+    const miniatura = (p.url || "").split(',')[0].trim();
+    // Tomamos la primera etiqueta para destacarla, o puedes iterar si quieres mostrar varias
+    const etiquetaPrincipal = p.etiquetas[0]; 
+
+    const htmlCard = `
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 position-relative">
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="z-index: 10;">
+            ${etiquetaPrincipal}
+          </span>
+          <img src="${miniatura}" class="card-img-top product-img" style="cursor:pointer;" onclick="abrirDetalles('${p.codigo}')" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">
+          <div class="card-body text-center d-flex flex-column">
+             <span class="text-muted small mb-1">${p.marca}</span>
+             <h5 class="fw-bold mb-3">${p.nombre}</h5>
+             <div class="mt-auto">
+               <button class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="cambiarVista('vista-catalogo')">Ver en catálogo</button>
+             </div>
+          </div>
+        </div>
+      </div>
+    `;
+    contenedor.innerHTML += htmlCard;
+  });
 }
 
 setInterval(() => { llamarServidor('keepAlive'); }, 300000);
