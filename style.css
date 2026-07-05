@@ -1,0 +1,284 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@500;700;800&display=swap');
+
+:root {
+  --color-slate: #0F172A;
+  --color-orange: #EA580C;
+  --color-orange-hover: #c24102;
+  --color-bg: #F8FAFC;
+  --color-whatsapp: #25D366;
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body { 
+  background-color: var(--color-bg); 
+  font-family: var(--font-body);
+  color: var(--color-slate);
+  min-height: 100vh; 
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-slate);
+}
+
+/* ==========================================
+   BOTONES Y COMPONENTES
+   ========================================== */
+.btn-brand-orange {
+  background-color: var(--color-orange);
+  color: white;
+  border: none;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.btn-brand-orange:hover {
+  background-color: var(--color-orange-hover);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-whatsapp {
+  background-color: var(--color-whatsapp);
+  color: white;
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+.btn-whatsapp:hover { background-color: #1ebe57; color: white; }
+
+/* Sobrescribir Primary de Bootstrap para alinearlo al Slate Blue */
+.btn-primary { background-color: var(--color-slate); border-color: var(--color-slate); font-family: var(--font-heading); }
+.btn-primary:hover { background-color: #1e293b; border-color: #1e293b; }
+.btn-outline-primary { color: var(--color-slate); border-color: var(--color-slate); font-family: var(--font-heading); }
+.btn-outline-primary:hover { background-color: var(--color-slate); color: white; }
+.text-primary { color: var(--color-slate) !important; }
+
+/* ==========================================
+   NAVBAR Y HERO SECTION
+   ========================================== */
+/* ... Tu .navbar-custom actual ... */
+.navbar-custom {
+  background-color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* NUEVO: Control del tamaño y comportamiento del logo */
+.navbar-logo {
+  height: 85px;        /* Altura ideal para que no rompa el padding de tu navbar */
+  width: auto;         /* Mantiene la proporción original para que no se estire */
+  object-fit: contain; 
+  padding: 2px 0;      /* Pequeño respiro visual */
+  transition: transform 0.2s ease-in-out;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.03); /* Un sutil efecto al pasar el mouse */
+}
+
+/* Ajuste responsivo para celulares */
+@media (max-width: 768px) {
+  .navbar-logo {
+    height: 48px;      /* Se hace un poco más pequeño en pantallas móviles */
+  }
+}
+.nav-link {
+  font-weight: 500;
+  color: var(--color-slate);
+  margin: 0 10px;
+}
+
+.hero-section {
+  background-color: white;
+  padding: 4rem 0 0 0;
+  overflow: hidden;
+}
+
+.hero-text-content {
+  padding-right: 2rem;
+  padding-bottom: 4rem;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.text-orange { color: var(--color-orange); }
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: #64748b;
+  margin-bottom: 2.5rem;
+  max-width: 90%;
+}
+
+.hero-image-wrapper {
+  position: relative;
+  height: 100%;
+  min-height: 400px;
+  background-color: var(--color-slate);
+  clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-image-wrapper img {
+  max-width: 120%;
+  transform: translateX(10%) rotate(-5deg);
+  filter: drop-shadow(-10px 10px 20px rgba(0,0,0,0.3));
+}
+
+.feature-mini { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.feature-mini i { color: var(--color-slate); font-size: 1.5rem; }
+.feature-mini h6 { margin: 0; font-size: 0.95rem; font-family: var(--font-body); font-weight: 600; }
+.feature-mini p { margin: 0; font-size: 0.8rem; color: #64748b; }
+
+/* ==========================================
+   BARRA DE CARACTERÍSTICAS INFERIOR
+   ========================================== */
+.bottom-features {
+  background-color: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 2rem 0;
+  margin-bottom: 3rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.b-feature-box { display: flex; align-items: center; gap: 15px; justify-content: center; border-right: 1px solid #e2e8f0; }
+.b-feature-box:last-child { border-right: none; }
+.b-feature-box i { font-size: 2rem; color: var(--color-slate); }
+.b-feature-box h6 { font-family: var(--font-heading); margin: 0; font-size: 0.95rem; }
+.b-feature-box p { margin: 0; font-size: 0.8rem; color: #64748b; }
+
+/* ==========================================
+   CATÁLOGO Y TARJETAS
+   ========================================== */
+.card { border: none; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; background: white; }
+.card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+.product-img { height: 220px; object-fit: cover; border-radius: 12px 12px 0 0; padding: 1rem; background: #fff;}
+.badge-marca { background-color: var(--color-bg); color: var(--color-slate); border: 1px solid #e2e8f0; font-size: 0.75rem; }
+.filtros-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 10px; }
+
+/* ==========================================
+   LOGIN Y ADMIN
+   ========================================== */
+.contenedor-login { display: flex; align-items: center; justify-content: center; min-height: 75vh; }
+.login-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; padding: 2.5rem; background: #fff; }
+#reader { width: 100%; max-width: 450px; margin: 0 auto 20px auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+@media (max-width: 768px) {
+  .hero-image-wrapper { clip-path: none; min-height: 300px; }
+  .hero-title { font-size: 2.5rem; }
+  .b-feature-box { border-right: none; margin-bottom: 1.5rem; justify-content: flex-start; padding-left: 1rem; }
+}
+/* ==========================================
+   NUEVAS MEJORAS VISUALES (HERO, CARRUSEL, FADE-IN)
+   ========================================== */
+
+/* 1. Efecto Flotante para el Hero */
+.img-floating {
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+  0% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-15px) rotate(-3deg); }
+  100% { transform: translateY(0) rotate(-5deg); }
+}
+
+/* 2. Carrusel Infinito de Marcas */
+.brand-carousel-container {
+  overflow: hidden;
+  background: white;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.brand-track {
+  display: flex;
+  width: calc(200px * 10); /* Ajustar según cantidad de logos */
+  animation: scrollInfinito 20s linear infinite;
+}
+.brand-track img {
+  width: 120px;
+  margin: 0 40px;
+  object-fit: contain;
+  filter: grayscale(100%) opacity(0.6);
+  transition: all 0.3s ease;
+}
+.brand-track img:hover {
+  filter: grayscale(0%) opacity(1);
+}
+@keyframes scrollInfinito {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* 3. Micro-interacciones (Fade-in on scroll) */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 4. Estadísticas Rápidas */
+.stats-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-orange);
+  font-family: var(--font-heading);
+}
+
+/* ==========================================
+   WIDGET CARRITO Y ETIQUETAS VISUALES
+   ========================================== */
+.widget-carrito {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: var(--color-orange);
+  border-radius: 50px;
+  width: 250px;
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.4);
+  cursor: pointer;
+  z-index: 1050;
+  transition: transform 0.3s ease, background-color 0.3s;
+}
+.widget-carrito:hover { transform: scale(1.05); background-color: var(--color-orange-hover); }
+
+/* Adaptación para celulares */
+@media (max-width: 768px) {
+  .widget-carrito {
+    bottom: 20px;
+    right: 50%;
+    transform: translateX(50%);
+    width: 90%;
+    max-width: 350px;
+  }
+  .widget-carrito:hover { transform: translateX(50%) scale(1.02); }
+}
+
+.etiqueta-visual {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
