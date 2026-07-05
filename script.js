@@ -599,6 +599,59 @@ function animarContador(idElemento, valorFinal) {
     }
   }, 30);
 }
+async function guardarNuevo() {
+  // 1. Evitar múltiples clics cambiando el texto del botón (opcional pero recomendado)
+  const btnGuardar = document.querySelector('[onclick="guardarNuevo()"]');
+  const textoOriginal = btnGuardar.innerHTML;
+  btnGuardar.innerHTML = "Guardando...";
+  btnGuardar.disabled = true;
+
+  try {
+    // 2. Capturar los datos del formulario (¡Revisa que los IDs coincidan con tu HTML!)
+    const datosNuevoProducto = {
+      codigo: document.getElementById('codigoProducto').value, 
+      nombre: document.getElementById('nombreProducto').value,
+      prefijo: document.getElementById('categoriaProducto').value, // O el ID de tu select de categorías
+      marca: document.getElementById('marcaProducto').value,
+      caracteristicas: document.getElementById('caracteristicasProducto').value,
+      url: document.getElementById('urlProducto').value,
+      sucursal: document.getElementById('sucursalProducto').value,
+      stock: document.getElementById('stockProducto').value,
+      pMayor: document.getElementById('pMayorProducto').value,
+      pMenor: document.getElementById('pMenorProducto').value,
+      etiquetas: [] // Si usas un sistema de etiquetas en el front, captúralo aquí
+    };
+
+    // 3. Validación básica en el frontend
+    if (!datosNuevoProducto.codigo || !datosNuevoProducto.nombre) {
+      alert("Por favor, completa al menos el Código y el Nombre del producto.");
+      return;
+    }
+
+    // 4. Enviar los datos a Google Apps Script usando tu función de servidor
+    // (Asegúrate de que 'llamarServidor' sea el nombre de tu función fetch)
+    const respuesta = await llamarServidor('registrarNuevoProducto', { datos: datosNuevoProducto });
+
+    // 5. Mostrar la respuesta del servidor (Éxito o Error)
+    alert(respuesta.mensaje);
+
+    // Si tuvo éxito, limpiamos el formulario y recargamos
+    if (respuesta.mensaje && respuesta.mensaje.includes("Éxito")) {
+      document.getElementById('formNuevoProducto').reset(); // Asegúrate de poner el ID de tu etiqueta <form>
+      // Opcional: Cerrar el modal usando Bootstrap
+      // const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoProducto'));
+      // if (modal) modal.hide();
+    }
+
+  } catch (error) {
+    console.error("Error al guardar:", error);
+    alert("Hubo un error de conexión al intentar guardar.");
+  } finally {
+    // Restaurar el botón
+    btnGuardar.innerHTML = textoOriginal;
+    btnGuardar.disabled = false;
+  }
+}
 
 // ==========================================
 // LÓGICA DEL CARRITO INTELIGENTE Y FLUJO DE PEDIDO
