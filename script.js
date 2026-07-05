@@ -6,20 +6,18 @@ const ITEMS_PER_PAGE = 500;
 let claveAdministrador = ""; let paginaActual = 0; let categoriaSeleccionada = "TODO"; let busquedaActual = ""; let timerBusqueda;
 let html5QrCode = null; let camaraActiva = false; let targetInputActual = "n_codigo"; 
 let ultimoEscaneoTime = 0; const COOLDOWN_TIME = 1500;
-let carritoCotizacion = []; // Nuevo Array para el carrito
+let carritoCotizacion = []; 
 
 const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav');
 const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-84.wav');
 
 function cambiarVista(idVista) {
-  // Manejo de visibilidad de las vistas
   const vistas = ['vista-inicio', 'vista-catalogo', 'vista-login', 'vista-admin'];
   vistas.forEach(v => {
     const el = document.getElementById(v);
     if (el) el.style.display = (v === idVista) ? 'block' : 'none';
   });
 
-  // Manejo del estado del Navbar Público
   const navPublico = document.getElementById('nav-publico');
   if (idVista === 'vista-inicio' || idVista === 'vista-catalogo') {
     if (navPublico) navPublico.style.display = 'block';
@@ -41,12 +39,10 @@ function cambiarVista(idVista) {
       }
     }
   } else {
-    // Si entramos a admin o login, ocultamos el navbar general
     if (navPublico) navPublico.style.display = 'none';
   }
 
   if(idVista === 'vista-login') setTimeout(() => document.getElementById('clave').focus(), 100);
-  
   window.scrollTo(0,0);
 }
 
@@ -99,7 +95,6 @@ function mostrarCargando(estado) {
   const btnVerMas = document.getElementById('contenedor-ver-mas');
   const contenedor = document.getElementById('contenedor-productos');
 
-  // VALIDACIÓN SALVAVIDAS: Si no encuentra los contenedores, ignoramos para no romper el script
   if (!btnVerMas || !contenedor) return;
 
   if (estado) {
@@ -121,30 +116,42 @@ function renderizarCategorias(categorias) {
 
 async function cargarCatalogoServidor() {
   const contenedor = document.getElementById('contenedor-productos');
-  const cacheLocal = localStorage.getItem("catalogo_sacd_local");
   
-  if (cacheLocal) {
-    catalogoCompleto = JSON.parse(cacheLocal);
+  // VERIFICACIÓN DE CACHÉ CON TIEMPO DE EXPIRACIÓN
+  const cacheData = localStorage.getItem("catalogo_sacd_local");
+  const cacheTime = localStorage.getItem("catalogo_sacd_time");
+  const ahora = new Date().getTime();
+  const TIEMPO_EXPIRACION = 30 * 60 * 1000; // 30 minutos
+  
+  if (cacheData && cacheTime && (ahora - parseInt(cacheTime)) < TIEMPO_EXPIRACION) {
+    catalogoCompleto = JSON.parse(cacheData);
     renderizarCatalogoLocal(); 
   } else {
     mostrarCargando(true); 
-    if (contenedor) contenedor.style.opacity = "0.5"; // CORREGIDO: Verificación de seguridad
-  }
+    if (contenedor) contenedor.style.opacity = "0.5"; 
 
-  const resultado = await llamarServidor('obtenerTodoElCatalogo');
-  
-  if (resultado && Array.isArray(resultado)) {
-    catalogoCompleto = resultado;
-    localStorage.setItem("catalogo_sacd_local", JSON.stringify(resultado));
-    renderizarCatalogoLocal(); 
-    if (contenedor) contenedor.style.opacity = "1"; // CORREGIDO: Verificación de seguridad
-    mostrarCargando(false);
-  } else if (!cacheLocal) { 
-    if (contenedor) {
-      contenedor.style.opacity = "1"; // CORREGIDO: Verificación de seguridad
-      contenedor.innerHTML = `<div class="col-12 text-center text-danger mt-5">Error de conexión.</div>`;
+    const resultado = await llamarServidor('obtenerTodoElCatalogo');
+    
+    if (resultado && Array.isArray(resultado)) {
+      catalogoCompleto = resultado;
+      localStorage.setItem("catalogo_sacd_local", JSON.stringify(resultado));
+      localStorage.setItem("catalogo_sacd_time", ahora.toString());
+      renderizarCatalogoLocal(); 
+      if (contenedor) contenedor.style.opacity = "1";
+      mostrarCargando(false);
+    } else if (!cacheData) { 
+      if (contenedor) {
+        contenedor.style.opacity = "1"; 
+        contenedor.innerHTML = `<div class="col-12 text-center text-danger mt-5">Error de conexión.</div>`;
+      }
+      mostrarCargando(false);
+    } else {
+       // Si falla pero hay caché viejo, lo usamos por emergencia
+       catalogoCompleto = JSON.parse(cacheData);
+       renderizarCatalogoLocal(); 
+       if (contenedor) contenedor.style.opacity = "1";
+       mostrarCargando(false);
     }
-    mostrarCargando(false);
   }
 }
 
@@ -156,7 +163,6 @@ function renderizarCatalogoLocal() {
   const codigosVistos = new Set();
   const listaBase = Array.isArray(catalogoCompleto) ? catalogoCompleto : [];
   
-  // Variables para Filtros Inteligentes
   let todasSucursales = new Set();
   
   listaBase.forEach(p => {
@@ -167,7 +173,6 @@ function renderizarCatalogoLocal() {
     if (p.sucursales) p.sucursales.forEach(s => todasSucursales.add(s));
   });
 
-  // Configuración de Filtros de Sucursal Automático
   const selectSucursal = document.getElementById('filtro-sucursal');
   const divSucursal = document.getElementById('div-filtro-sucursal');
   
@@ -177,14 +182,13 @@ function renderizarCatalogoLocal() {
       if (selectSucursal.options.length <= 1) {
         todasSucursales.forEach(s => selectSucursal.innerHTML += `<option value="${s}">${s}</option>`);
         const modalSucursal = document.getElementById('sucursal-envio');
-        if (modalSucursal) modalSucursal.innerHTML = selectSucursal.innerHTML; // Llenar modal pedido
+        if (modalSucursal) modalSucursal.innerHTML = selectSucursal.innerHTML;
       }
     } else {
       divSucursal.style.display = "none";
     }
   }
 
-  // Lectura de Filtros
   const catSeleccionada = document.getElementById('filtro-categoria') ? document.getElementById('filtro-categoria').value : "TODO";
   const sucSeleccionada = document.getElementById('filtro-sucursal') ? document.getElementById('filtro-sucursal').value : "TODAS";
   
@@ -204,11 +208,10 @@ function renderizarCatalogoLocal() {
     );
   }
 
-  // 🥇 ORDENAMIENTO: Etiquetas primero
   productosFiltrados.sort((a, b) => {
     const aTieneEtiqueta = (a.etiquetas && a.etiquetas.length > 0) ? 1 : 0;
     const bTieneEtiqueta = (b.etiquetas && b.etiquetas.length > 0) ? 1 : 0;
-    return bTieneEtiqueta - aTieneEtiqueta; // Los que tienen etiqueta (1) suben arriba
+    return bTieneEtiqueta - aTieneEtiqueta;
   });
   
   const totalProductos = productosFiltrados.length;
@@ -242,7 +245,6 @@ function dibujarTarjetas(resultado) {
   const contenedor = document.getElementById('contenedor-productos'); 
   const contenedorBoton = document.getElementById('contenedor-ver-mas');
   
-  // VALIDACIÓN: Si no existe el contenedor, salimos para no romper el código
   if (!contenedor) return; 
 
   if (paginaActual === 0) contenedor.innerHTML = "";
@@ -253,10 +255,7 @@ function dibujarTarjetas(resultado) {
   }
 
   resultado.productos.forEach(p => {
-    // REPARADO: Creamos la variable miniatura que faltaba para la imagen
     const miniatura = (p.url || "").split(',')[0].trim();
-
-    // Crear el bloque HTML de etiquetas si existen
     let etiquetasHTML = "";
     if (p.etiquetas && p.etiquetas.length > 0) {
       const spans = p.etiquetas.map(e => `<span>${e}</span>`).join('');
@@ -266,7 +265,6 @@ function dibujarTarjetas(resultado) {
     const col = document.createElement('div'); 
     col.className = "col-sm-6 col-md-4 col-lg-3 position-relative";
     
-    // UI Actualizada: Sin stock, botón directo de cotización
     col.innerHTML = `
       ${etiquetasHTML}
       <div class="card h-100 shadow-sm border-0">
@@ -471,6 +469,7 @@ async function guardarActualizacion() {
     alert(res.mensaje);
     if (res.mensaje.includes("Éxito")) {
       localStorage.removeItem("catalogo_sacd_local");
+      localStorage.removeItem("catalogo_sacd_time");
       document.getElementById('formActualizar').reset(); 
       document.getElementById('a_metodo_codigo').value = 'manual'; 
       cambiarMetodo('actualizar'); 
@@ -485,6 +484,7 @@ async function forzarLimpiarCacheUI() {
   if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales en la siguiente visita.")) return;
   
   localStorage.removeItem("catalogo_sacd_local");
+  localStorage.removeItem("catalogo_sacd_time");
 
   const status = document.getElementById('status');
   try {
@@ -546,9 +546,6 @@ async function cargarTablaAdmin() {
   }
 }
 
-// ==========================================
-// OBSERVADOR DE INTERSECCIÓN (ANIMACIONES FADE-IN)
-// ==========================================
 document.addEventListener("DOMContentLoaded", function() {
   const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
   const observer = new IntersectionObserver((entries, observer) => {
@@ -565,9 +562,6 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-// ==========================================
-// CONTADORES AUTOMÁTICOS DESDE GOOGLE SHEETS
-// ==========================================
 async function cargarEstadisticasDinamicas() {
   const resultado = await llamarServidor('obtenerEstadisticas');
   
@@ -576,7 +570,6 @@ async function cargarEstadisticasDinamicas() {
     animarContador("stat-clientes", resultado.clientes);
     animarContador("stat-garantia", resultado.garantia);
   } else {
-    // Valores por defecto si falla la conexión
     animarContador("stat-productos", 500);
     animarContador("stat-clientes", 50);
     animarContador("stat-garantia", 100);
@@ -588,7 +581,7 @@ function animarContador(idElemento, valorFinal) {
   if (!elemento) return;
   
   let valorActual = 0;
-  const incremento = Math.ceil(valorFinal / 50); // Velocidad de la animación
+  const incremento = Math.ceil(valorFinal / 50); 
   const intervalo = setInterval(() => {
     valorActual += incremento;
     if (valorActual >= valorFinal) {
@@ -599,6 +592,7 @@ function animarContador(idElemento, valorFinal) {
     }
   }, 30);
 }
+
 async function guardarNuevo() {
   const btnGuardar = document.querySelector('[onclick="guardarNuevo()"]');
   const textoOriginal = btnGuardar ? btnGuardar.innerHTML : "Guardar";
@@ -609,17 +603,12 @@ async function guardarNuevo() {
   }
 
   try {
-    // Función salvavidas: Si el ID no existe en el HTML, no rompe el código.
     const obtenerValorSeguro = (id) => {
       const elemento = document.getElementById(id);
-      if (!elemento) {
-        console.warn(`⚠️ Aviso: El campo con id '${id}' no existe en el HTML.`);
-        return ""; 
-      }
+      if (!elemento) { return ""; }
       return elemento.value;
     };
 
-    // Captura de datos usando los IDs correctos (prefijo n_ para "nuevo")
     const datosNuevoProducto = {
       codigo: obtenerValorSeguro('n_codigo'), 
       nombre: obtenerValorSeguro('n_nombre'),
@@ -634,29 +623,23 @@ async function guardarNuevo() {
       etiquetas: [] 
     };
 
-    // Validación básica
     if (!datosNuevoProducto.codigo || !datosNuevoProducto.nombre) {
       alert("Por favor, completa al menos el Código y el Nombre del producto.");
       if (btnGuardar) { btnGuardar.innerHTML = textoOriginal; btnGuardar.disabled = false; }
       return;
     }
 
-    // Enviar los datos a Google Apps Script
     const respuesta = await llamarServidor('registrarNuevoProducto', { datos: datosNuevoProducto });
-
-    // Mostrar la respuesta del servidor
     alert(respuesta ? respuesta.mensaje : "Error de comunicación con el servidor.");
 
-    // Si tuvo éxito, limpiamos el formulario y recargamos la tabla
     if (respuesta && respuesta.mensaje && respuesta.mensaje.includes("Éxito")) {
-      const formulario = document.getElementById('formNuevoProducto');
+      // CORRECCIÓN APLICADA: ID DEL FORMULARIO CORRECTO
+      const formulario = document.getElementById('formNuevo');
       if (formulario) formulario.reset();
       
-      // Limpiar la imagen de previsualización si existe
       const imgPreview = document.getElementById('preview-container');
       if (imgPreview) imgPreview.style.display = 'none';
 
-      // Refrescar el catálogo y la tabla de admin automáticamente
       await cargarTablaAdmin();
       await cargarCatalogoServidor();
     }
@@ -665,16 +648,13 @@ async function guardarNuevo() {
     console.error("Error crítico al guardar:", error);
     alert("Hubo un error de conexión al intentar guardar. Revisa la consola.");
   } finally {
-    // Restaurar el botón a la normalidad
     if (btnGuardar) {
       btnGuardar.innerHTML = textoOriginal;
       btnGuardar.disabled = false;
     }
   }
 }
-// ==========================================
-// LÓGICA DEL CARRITO INTELIGENTE Y FLUJO DE PEDIDO
-// ==========================================
+
 function agregarAlCarrito(codigo, nombre) {
   const item = carritoCotizacion.find(i => i.codigo === codigo);
   if (item) item.cantidad++; else carritoCotizacion.push({codigo, nombre, cantidad: 1});
@@ -698,7 +678,6 @@ function abrirModalCarrito() {
     lista.innerHTML = `<li class="list-group-item text-center text-muted border-0 py-4"><i class="fa-solid fa-cart-arrow-down fs-1 mb-3 opacity-50"></i><br>No has añadido productos aún.</li>`;
     if (flujoContenedor) flujoContenedor.style.display = "none";
   } else {
-    // 1. Dibujar Items
     carritoCotizacion.forEach((item, index) => {
       lista.innerHTML += `
         <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
@@ -713,7 +692,6 @@ function abrirModalCarrito() {
         </li>`;
     });
     
-    // 2. Controlar la lista de sucursales globales para inyectarla al carrito
     if (flujoContenedor) flujoContenedor.style.display = "block";
     const selectSucursal = document.getElementById('sucursal-envio');
     const filtroGlobal = document.getElementById('filtro-sucursal');
@@ -727,18 +705,16 @@ function abrirModalCarrito() {
       });
       selectSucursal.innerHTML = optionsHTML;
       
-      // Si solo existe 1 sucursal real (El array "TODAS" + 1 sucursal = length 2)
       if (filtroGlobal.options.length === 2) {
         const unicaSucursal = filtroGlobal.options[1].value;
         selectSucursal.value = unicaSucursal;
-        cargarVendedores(unicaSucursal); // Disparamos auto-carga
+        cargarVendedores(unicaSucursal); 
       } else {
-        selectSucursal.value = ""; // Obligamos al usuario a elegir
+        selectSucursal.value = ""; 
       }
     }
   }
   
-  // Abrimos modal de forma segura con Bootstrap 5
   const modalObj = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCarrito'));
   modalObj.show();
 }
@@ -752,7 +728,7 @@ function quitarDelCarrito(index) {
   } else {
     if(items) items.innerText = carritoCotizacion.length + " ítems";
   }
-  abrirModalCarrito(); // Recarga la vista internamente
+  abrirModalCarrito();
 }
 
 function vaciarCarrito() {
@@ -763,9 +739,6 @@ function vaciarCarrito() {
   if(modal) modal.hide();
 }
 
-// ==========================================
-// FLUJO NUEVO: OBTENER VENDEDORES EN CARRITO
-// ==========================================
 async function cargarVendedores(sucursalForzada = null) {
   const select = document.getElementById('sucursal-envio');
   const sucursal = sucursalForzada || (select ? select.value : "");
@@ -801,7 +774,6 @@ async function cargarVendedores(sucursalForzada = null) {
   }
 }
 
-// Envío altamente formateado para el vendedor
 function enviarWhatsAppAAsesor(numero, nombreAsesor) {
   if (carritoCotizacion.length === 0) return;
   
