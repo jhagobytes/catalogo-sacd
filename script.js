@@ -11,7 +11,6 @@ let carritoCotizacion = [];
 const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav');
 const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-84.wav');
 
-// Función auxiliar para prevenir inyección de código (XSS) al usar innerHTML
 function sanitizarXSS(str) {
   if (!str) return "";
   return String(str).replace(/[&<>"']/g, function(m) {
@@ -19,7 +18,6 @@ function sanitizarXSS(str) {
   });
 }
 
-// FIX: Reconstructor dinámico de Cloudinary
 function reconstruirUrlCloudinary(id) {
   if (!id) return "";
   if (id.startsWith("http") || id.startsWith("data:image")) return id;
@@ -109,7 +107,6 @@ window.onload = async function() {
 function mostrarCargando(estado) {
   const btnVerMas = document.getElementById('contenedor-ver-mas');
   const contenedor = document.getElementById('contenedor-productos');
-
   if (!btnVerMas || !contenedor) return;
 
   if (estado) {
@@ -131,7 +128,6 @@ function renderizarCategorias(categorias) {
 
 async function cargarCatalogoServidor() {
   const contenedor = document.getElementById('contenedor-productos');
-  
   const cacheData = localStorage.getItem("catalogo_sacd_local");
   const cacheTime = localStorage.getItem("catalogo_sacd_time");
   const ahora = new Date().getTime();
@@ -178,7 +174,6 @@ function renderizarCatalogoLocal() {
   let productosUnicos = [];
   const codigosVistos = new Set();
   const listaBase = Array.isArray(catalogoCompleto) ? catalogoCompleto : [];
-  
   let todasSucursales = new Set();
   
   listaBase.forEach(p => {
@@ -273,11 +268,8 @@ function dibujarTarjetas(resultado) {
   resultado.productos.forEach(p => {
     const miniaturaRaw = (p.url || "").split(',')[0].trim();
     const miniatura = reconstruirUrlCloudinary(miniaturaRaw);
-    
-    // Sanitizamos los datos inyectados
     const nombreSeguro = sanitizarXSS(p.nombre);
     const marcaSegura = sanitizarXSS(p.marca);
-    // Convertimos a texto y limpiamos la "basura" invisible del escáner
     const codigoSeguro = sanitizarXSS(String(p.codigo).trim());
 
     let etiquetasHTML = "";
@@ -287,7 +279,8 @@ function dibujarTarjetas(resultado) {
     }
 
     const col = document.createElement('div'); 
-    col.className = "col-12 col-sm-6 col-md-4 col-lg-3 position-relative";
+    /* AQUÍ EL CAMBIO CLAVE PARA RESPONSIVE: col-12 obliga a 1 columna en teléfonos */
+    col.className = "col-12 col-sm-6 col-md-4 col-lg-3 position-relative mb-2";
     
     col.innerHTML = `
       ${etiquetasHTML}
@@ -313,8 +306,7 @@ function dibujarTarjetas(resultado) {
 }
 
 function abrirDetalles(codigo) {
-  // Comparamos peras con peras (Texto limpio vs Texto limpio)
-const producto = catalogoCompleto.find(p => String(p.codigo).trim() === String(codigo).trim());
+  const producto = catalogoCompleto.find(p => String(p.codigo).trim() === String(codigo).trim());
   if(!producto) return;
 
   const cantidadStock = (producto.stock !== undefined && producto.stock !== null) ? parseInt(producto.stock) : 0;
@@ -348,7 +340,6 @@ const producto = catalogoCompleto.find(p => String(p.codigo).trim() === String(c
     htmlImagen = `<img src="${imgUrl}" class="img-fluid w-100" style="object-fit: contain; height: 350px;" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">`;
   }
 
-  // FIX: Validaciones de existencia en el DOM antes de asignar valores
   const elContenedorImg = document.getElementById('contenedor-imagen-detalle');
   if (elContenedorImg) elContenedorImg.innerHTML = htmlImagen;
 
@@ -497,7 +488,6 @@ async function iniciarCamara() {
   }
 }
 
-// FIX: Resiliencia al apagar la cámara
 async function detenerCamara() {
   if (html5QrCode && camaraActiva) {
     try { 
@@ -652,7 +642,6 @@ async function cargarTablaAdmin() {
   }
 }
 
-// FIX: A11y (aria-hidden) gestionado globalmente
 document.addEventListener("DOMContentLoaded", function() {
   const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
   const observer = new IntersectionObserver((entries, observer) => {
@@ -938,9 +927,9 @@ function renderizarProductosDestacados() {
     const safeMarca = sanitizarXSS(p.marca);
     const safeCodigo = sanitizarXSS(p.codigo);
 
-    onst htmlCard = `
-      <div class="col-12 col-md-4 mb-3">
-        <div class="card h-100 shadow-sm border-0 position-relative">
+    const htmlCard = `
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm border-0 position-relative mb-2">
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="z-index: 10;">
             ${safeEtiqueta}
           </span>
