@@ -48,7 +48,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 }
 .btn-whatsapp:hover { background-color: #1ebe57; color: white; }
 
-/* Sobrescribir Primary de Bootstrap para alinearlo al Slate Blue */
 .btn-primary { background-color: var(--color-slate); border-color: var(--color-slate); font-family: var(--font-heading); }
 .btn-primary:hover { background-color: #1e293b; border-color: #1e293b; }
 .btn-outline-primary { color: var(--color-slate); border-color: var(--color-slate); font-family: var(--font-heading); }
@@ -58,30 +57,27 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 /* ==========================================
    NAVBAR Y HERO SECTION
    ========================================== */
-/* ... Tu .navbar-custom actual ... */
 .navbar-custom {
   background-color: white;
   padding: 1rem 2rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* NUEVO: Control del tamaño y comportamiento del logo */
 .navbar-logo {
-  height: 85px;        /* Altura ideal para que no rompa el padding de tu navbar */
-  width: auto;         /* Mantiene la proporción original para que no se estire */
+  height: 85px;
+  width: auto;
   object-fit: contain; 
-  padding: 2px 0;      /* Pequeño respiro visual */
+  padding: 2px 0;
   transition: transform 0.2s ease-in-out;
 }
 
 .navbar-logo:hover {
-  transform: scale(1.03); /* Un sutil efecto al pasar el mouse */
+  transform: scale(1.03); 
 }
 
-/* Ajuste responsivo para celulares */
 @media (max-width: 768px) {
   .navbar-logo {
-    height: 48px;      /* Se hace un poco más pequeño en pantallas móviles */
+    height: 48px;
   }
 }
 .nav-link {
@@ -177,11 +173,10 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   .hero-title { font-size: 2.5rem; }
   .b-feature-box { border-right: none; margin-bottom: 1.5rem; justify-content: flex-start; padding-left: 1rem; }
 }
+
 /* ==========================================
    NUEVAS MEJORAS VISUALES (HERO, CARRUSEL, FADE-IN)
    ========================================== */
-
-/* 1. Efecto Flotante para el Hero */
 .img-floating {
   animation: float 4s ease-in-out infinite;
 }
@@ -191,7 +186,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   100% { transform: translateY(0) rotate(-5deg); }
 }
 
-/* 2. Carrusel Infinito de Marcas */
 .brand-carousel-container {
   overflow: hidden;
   background: white;
@@ -200,7 +194,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 }
 .brand-track {
   display: flex;
-  width: calc(200px * 10); /* Ajustar según cantidad de logos */
+  width: calc(200px * 10);
   animation: scrollInfinito 20s linear infinite;
 }
 .brand-track img {
@@ -218,7 +212,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   100% { transform: translateX(-50%); }
 }
 
-/* 3. Micro-interacciones (Fade-in on scroll) */
 .fade-in {
   opacity: 0;
   transform: translateY(30px);
@@ -229,7 +222,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   transform: translateY(0);
 }
 
-/* 4. Estadísticas Rápidas */
 .stats-number {
   font-size: 2.5rem;
   font-weight: 800;
@@ -254,7 +246,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 }
 .widget-carrito:hover { transform: scale(1.05); background-color: var(--color-orange-hover); }
 
-/* Adaptación para celulares */
 @media (max-width: 768px) {
   .widget-carrito {
     bottom: 20px;
@@ -281,4 +272,30 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+/* ==========================================
+   AJUSTES ESPECÍFICOS PARA MÓVILES
+   ========================================== */
+@media (max-width: 768px) {
+  #carouselDetalle .carousel-item img, 
+  #contenedor-imagen-detalle img {
+    height: 250px !important;
+  }
+  
+  #vista-catalogo {
+    padding-top: 1rem !important;
+  }
+  
+  .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  #contenedor-filtros select {
+    margin-bottom: 10px;
+  }
+
+  .hero-title {
+    font-size: 2rem !important;
+  }
 }
