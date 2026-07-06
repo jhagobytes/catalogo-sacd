@@ -218,7 +218,8 @@ function renderizarCatalogoLocal() {
       // Usamos String() para asegurar que incluso los números sean tratados como texto
       String(p.nombre || "").toLowerCase().includes(query) || 
       String(p.codigo || "").toLowerCase().includes(query) || 
-      String(p.marca || "").toLowerCase().includes(query)
+      String(p.marca || "").toLowerCase().includes(query)  ||
+      String(p.caracteristicas || "").toLowerCase().includes(query)
     );
   }
 
