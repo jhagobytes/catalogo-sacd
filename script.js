@@ -277,7 +277,8 @@ function dibujarTarjetas(resultado) {
     // Sanitizamos los datos inyectados
     const nombreSeguro = sanitizarXSS(p.nombre);
     const marcaSegura = sanitizarXSS(p.marca);
-    const codigoSeguro = sanitizarXSS(p.codigo);
+    // Convertimos a texto y limpiamos la "basura" invisible del escáner
+    const codigoSeguro = sanitizarXSS(String(p.codigo).trim());
 
     let etiquetasHTML = "";
     if (p.etiquetas && p.etiquetas.length > 0) {
@@ -312,7 +313,8 @@ function dibujarTarjetas(resultado) {
 }
 
 function abrirDetalles(codigo) {
-  const producto = catalogoCompleto.find(p => p.codigo === codigo);
+  // Comparamos peras con peras (Texto limpio vs Texto limpio)
+const producto = catalogoCompleto.find(p => String(p.codigo).trim() === String(codigo).trim());
   if(!producto) return;
 
   const cantidadStock = (producto.stock !== undefined && producto.stock !== null) ? parseInt(producto.stock) : 0;
@@ -775,7 +777,7 @@ async function guardarNuevo() {
 }
 
 function agregarAlCarrito(codigo, nombre) {
-  const item = carritoCotizacion.find(i => i.codigo === codigo);
+  const item = carritoCotizacion.find(i => String(i.codigo).trim() === String(codigo).trim());
   if (item) item.cantidad++; else carritoCotizacion.push({codigo, nombre, cantidad: 1});
   
   const widget = document.getElementById('widget-carrito');
