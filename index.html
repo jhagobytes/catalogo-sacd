@@ -237,16 +237,16 @@
 
             <hr class="mt-5 text-muted">
             
-            <div class="col-md-6"><label class="form-label fw-bold">Nombre del Producto</label><input type="text" id="n_nombre" class="form-control rounded-3" required></div>
-            <div class="col-md-6"><label class="form-label fw-bold">Marca</label><input type="text" id="n_marca" class="form-control rounded-3" required></div>
+            <div class="col-md-6"><label for="n_nombre" class="form-label fw-bold">Nombre del Producto</label><input type="text" id="n_nombre" class="form-control rounded-3" required></div>
+            <div class="col-md-6"><label for="n_marca" class="form-label fw-bold">Marca</label><input type="text" id="n_marca" class="form-control rounded-3" required></div>
             <div class="col-12">
-              <label class="form-label fw-bold">URL Imagen (Opcional, separa con comas para carrusel)</label><input type="text" id="n_url" class="form-control rounded-3" placeholder="Pega el link aquí..." onblur="previsualizarImagen()">
+              <label for="n_url" class="form-label fw-bold">URL Imagen (Opcional, separa con comas para carrusel)</label><input type="text" id="n_url" class="form-control rounded-3" placeholder="Pega el link aquí..." onblur="previsualizarImagen()">
               <div id="preview-container" class="mt-3 text-center" style="display:none;"><img id="img-preview" src="" alt="Vista previa" style="max-height: 120px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
             </div>
-            <div class="col-12"><label class="form-label fw-bold">Características</label><textarea id="n_caracteristicas" class="form-control rounded-3" rows="3" required></textarea></div>
-            <div class="col-md-3"><label class="form-label fw-bold">Sucursal</label><select id="n_sucursal" class="form-select sucursal-select rounded-3" required></select></div>
-            <div class="col-md-3"><label class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="n_pmayor" class="form-control rounded-3" step="0.01"></div>
-            <div class="col-md-3"><label class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="n_pmenor" class="form-control rounded-3" step="0.01"></div>
+            <div class="col-12"><label for="n_caracteristicas" class="form-label fw-bold">Características</label><textarea id="n_caracteristicas" class="form-control rounded-3" rows="3" required></textarea></div>
+            <div class="col-md-3"><label for="n_sucursal" class="form-label fw-bold">Sucursal</label><select id="n_sucursal" class="form-select sucursal-select rounded-3" required></select></div>
+            <div class="col-md-3"><label for="n_pmayor" class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="n_pmayor" class="form-control rounded-3" step="0.01"></div>
+            <div class="col-md-3"><label for="n_pmenor" class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="n_pmenor" class="form-control rounded-3" step="0.01"></div>
             
             <div class="col-12 mt-4 bg-light p-3 rounded-3 border border-light">
               <label class="form-label fw-bold text-primary"><i class="fa-solid fa-tags text-orange"></i> Etiquetas Visuales (Opcional)</label>
@@ -258,7 +258,7 @@
               </div>
             </div>
             
-            <div class="col-md-3"><label class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="n_stock" class="form-control rounded-3" placeholder="0" min="0"></div>
+            <div class="col-md-3"><label for="n_stock" class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="n_stock" class="form-control rounded-3" placeholder="0" min="0"></div>
             <div class="col-12 mt-5"><button type="button" id="btnGuardar" class="btn btn-brand-orange w-100 py-3 fw-bold rounded-pill" onclick="guardarNuevo()">GUARDAR NUEVO PRODUCTO</button></div>
           </div>
         </form>
@@ -283,9 +283,9 @@
               <select id="a_sucursal" class="form-select sucursal-select rounded-3" required></select>
             </div>
             <hr class="mt-5 text-muted">
-            <div class="col-md-4"><label class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="a_stock" class="form-control rounded-3" min="0"></div>
-            <div class="col-md-4"><label class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="a_pmayor_upd" class="form-control rounded-3" step="0.01"></div>
-            <div class="col-md-4"><label class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="a_pmenor_upd" class="form-control rounded-3" step="0.01"></div>
+            <div class="col-md-4"><label for="a_stock" class="form-label fw-bold">Stock (Opcional)</label><input type="number" id="a_stock" class="form-control rounded-3" min="0"></div>
+            <div class="col-md-4"><label for="a_pmayor_upd" class="form-label fw-bold">Precio Mayor (Opcional)</label><input type="number" id="a_pmayor_upd" class="form-control rounded-3" step="0.01"></div>
+            <div class="col-md-4"><label for="a_pmenor_upd" class="form-label fw-bold">Precio Menor (Opcional)</label><input type="number" id="a_pmenor_upd" class="form-control rounded-3" step="0.01"></div>
             <div class="col-12 mt-5"><button type="button" id="btnActualizar" class="btn btn-success w-100 py-3 fw-bold rounded-pill" onclick="guardarActualizacion()">ACTUALIZAR INVENTARIO</button></div>
           </div>
         </form>
