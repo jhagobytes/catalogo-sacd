@@ -287,7 +287,7 @@ function dibujarTarjetas(resultado) {
     }
 
     const col = document.createElement('div'); 
-    col.className = "col-sm-6 col-md-4 col-lg-3 position-relative";
+    col.className = "col-12 col-sm-6 col-md-4 col-lg-3 position-relative";
     
     col.innerHTML = `
       ${etiquetasHTML}
@@ -938,8 +938,8 @@ function renderizarProductosDestacados() {
     const safeMarca = sanitizarXSS(p.marca);
     const safeCodigo = sanitizarXSS(p.codigo);
 
-    const htmlCard = `
-      <div class="col-md-4">
+    onst htmlCard = `
+      <div class="col-12 col-md-4 mb-3">
         <div class="card h-100 shadow-sm border-0 position-relative">
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="z-index: 10;">
             ${safeEtiqueta}
