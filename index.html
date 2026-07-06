@@ -24,8 +24,8 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-          <ul class="navbar-nav gap-3">
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+          <ul class="navbar-nav mx-auto gap-3 text-center">
             <li class="nav-item">
               <a id="nav-tab-inicio" class="nav-link active text-orange" style="border-bottom: 2px solid var(--color-orange);" href="#" onclick="cambiarVista('vista-inicio'); return false;">Inicio</a>
             </li>
@@ -33,12 +33,12 @@
               <a id="nav-tab-catalogo" class="nav-link" href="#" onclick="cambiarVista('vista-catalogo'); return false;">Catálogo</a>
             </li>
           </ul>
-        </div>
-        <div class="d-none d-lg-flex gap-2">
-            <button class="btn btn-outline-secondary rounded-pill px-3" onclick="cambiarVista('vista-login')"><i class="fa-solid fa-gear"></i></button>
-            <button class="btn btn-brand-orange rounded-pill px-4 d-flex align-items-center gap-2" onclick="window.open('https://wa.me/TUNUMERO', '_blank')">
-              <i class="fa-brands fa-whatsapp fs-5"></i> Contacto via WhatsApp
-            </button>
+          <div class="d-flex flex-column flex-lg-row gap-2 mt-3 mt-lg-0 align-items-center">
+              <button class="btn btn-outline-secondary rounded-pill px-3 w-100" onclick="cambiarVista('vista-login')"><i class="fa-solid fa-gear"></i> Admin</button>
+              <button class="btn btn-brand-orange rounded-pill px-4 w-100 d-flex align-items-center justify-content-center gap-2" onclick="window.open('https://wa.me/TUNUMERO', '_blank')">
+                <i class="fa-brands fa-whatsapp fs-5"></i> Contacto via WhatsApp
+              </button>
+          </div>
         </div>
       </div>
     </nav>
@@ -115,10 +115,7 @@
 
     <section class="container my-5 fade-in">
           <h3 class="text-center mb-4">Productos <span class="text-orange">Destacados</span></h3>
-  <!-- El ID debe estar vacío -->
-        <div class="row g-4" id="productos-destacados-preview">
-       <!-- Los productos se inyectarán aquí mediante JS -->
-        </div>
+        <div class="row g-4" id="productos-destacados-preview"></div>
     </section>
 
     <section class="bottom-features fade-in">
@@ -147,40 +144,41 @@
   
   <div id="vista-catalogo" style="display: none; padding-top: 2rem;">
   
-  <div class="container">
-    
-    <div class="row mb-3 justify-content-center px-3">
-      <div class="col-md-7">
-        <input type="text" id="buscador" class="form-control form-control-lg rounded-pill shadow-sm text-center border-orange" placeholder="🔍 Buscar por nombre, marca o código..." onkeyup="filtrarProductos()">
+    <div class="container">
+      <div class="row mb-3 justify-content-center px-3">
+        <div class="col-md-7">
+          <input type="text" id="buscador" class="form-control form-control-lg rounded-pill shadow-sm text-center border-orange" placeholder="🔍 Buscar por nombre, marca o código..." onkeyup="filtrarProductos()">
+        </div>
       </div>
-    </div>
 
-    <div class="row mb-4 justify-content-center gap-2 px-3" id="contenedor-filtros">
-      <div class="col-md-4">
-        <select id="filtro-categoria" class="form-select form-select-lg rounded-pill border-0 shadow-sm text-center fw-bold text-primary" onchange="filtrarProductos()">
-          <option value="TODO">Todas las Categorías</option>
-        </select>
+      <div class="row mb-4 justify-content-center gap-2 px-3" id="contenedor-filtros">
+        <div class="col-md-4">
+          <select id="filtro-categoria" class="form-select form-select-lg rounded-pill border-0 shadow-sm text-center fw-bold text-primary" onchange="filtrarProductos()">
+            <option value="TODO">Todas las Categorías</option>
+          </select>
+        </div>
+        <div class="col-md-3" id="div-filtro-sucursal" style="display: none;">
+          <select id="filtro-sucursal" class="form-select form-select-lg rounded-pill border-0 shadow-sm text-center fw-bold text-orange" onchange="filtrarProductos()">
+            <option value="TODAS">Todas las Sucursales</option>
+          </select>
+        </div>
       </div>
-      <div class="col-md-3" id="div-filtro-sucursal" style="display: none;">
-        <select id="filtro-sucursal" class="form-select form-select-lg rounded-pill border-0 shadow-sm text-center fw-bold text-orange" onchange="filtrarProductos()">
-          <option value="TODAS">Todas las Sucursales</option>
-        </select>
+          
+      <div class="filtros-scroll mb-4 text-center" id="contenedor-categorias">
+        <button class="btn btn-primary m-1 rounded-pill px-4" onclick="filtrarPorCategoria('TODO')">TODO</button>
       </div>
-    </div>
-        
-    <div class="filtros-scroll mb-4 text-center" id="contenedor-categorias">
-      <button class="btn btn-primary m-1 rounded-pill px-4" onclick="filtrarPorCategoria('TODO')">TODO</button>
-    </div>
-        
-    <div class="row g-4" id="contenedor-productos" style="transition: opacity 0.3s ease-in-out;">
-      <div class="col-12 text-center mt-5">
-        <div class="spinner-border text-orange" role="status"></div>
+          
+      <div class="row g-4" id="contenedor-productos" style="transition: opacity 0.3s ease-in-out;">
+        <div class="col-12 text-center mt-5">
+          <div class="spinner-border text-orange" role="status"></div>
+        </div>
       </div>
+          
+      <div id="contenedor-ver-mas" class="text-center mt-5"></div>
     </div>
-        
-    <div id="contenedor-ver-mas" class="text-center mt-5"></div>
-
-  </div> </div> <div id="vista-login" class="container" style="display: none;">
+  </div> 
+  
+  <div id="vista-login" class="container" style="display: none;">
     <div class="contenedor-login">
       <div class="login-card text-center border-0">
         <div class="mb-3"><i class="fa-solid fa-cube text-orange fs-1"></i></div>
@@ -214,7 +212,7 @@
       <div id="reader"></div>
     </div>
 
-    <ul class="nav nav-tabs mb-4 border-0 gap-2" id="adminTabs" role="tablist">
+    <ul class="nav nav-tabs flex-column flex-sm-row mb-4 border-0 gap-2" id="adminTabs" role="tablist">
       <li class="nav-item" role="presentation"><button class="nav-link active fw-bold border-0 rounded-pill bg-light" id="nuevo-tab" data-bs-toggle="tab" data-bs-target="#nuevo" type="button" role="tab">📦 Registrar Nuevo</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link fw-bold border-0 rounded-pill bg-light" id="actualizar-tab" data-bs-toggle="tab" data-bs-target="#actualizar" type="button" role="tab">🔄 Actualizar Inventario</button></li>
     </ul>
@@ -248,7 +246,7 @@
             <div class="col-md-6"><label class="form-label fw-bold">Nombre del Producto</label><input type="text" id="n_nombre" class="form-control rounded-3" required></div>
             <div class="col-md-6"><label class="form-label fw-bold">Marca</label><input type="text" id="n_marca" class="form-control rounded-3" required></div>
             <div class="col-12">
-              <label class="form-label fw-bold">URL Imagen (Opcional, separa con comas para carrusel)</label><input type="url" id="n_url" class="form-control rounded-3" onblur="previsualizarImagen()">
+              <label class="form-label fw-bold">URL Imagen (Opcional, separa con comas para carrusel)</label><input type="text" id="n_url" class="form-control rounded-3" placeholder="Pega el link aquí..." onblur="previsualizarImagen()">
               <div id="preview-container" class="mt-3 text-center" style="display:none;"><img id="img-preview" src="" alt="Vista previa" style="max-height: 120px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
             </div>
             <div class="col-12"><label class="form-label fw-bold">Características</label><textarea id="n_caracteristicas" class="form-control rounded-3" rows="3" required></textarea></div>
