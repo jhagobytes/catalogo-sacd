@@ -275,27 +275,64 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 }
 
 /* ==========================================
-   AJUSTES ESPECÍFICOS PARA MÓVILES
+   AJUSTES ESTRICTOS PARA MÓVILES (MOBILE FIRST)
    ========================================== */
 @media (max-width: 768px) {
-  #carouselDetalle .carousel-item img, 
-  #contenedor-imagen-detalle img {
-    height: 250px !important;
+  /* 1. Forzar exactamente 1 tarjeta por fila (1 columna ocupando 100%) */
+  #contenedor-productos > div,
+  #productos-destacados-preview > div {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  /* 2. Ajustes de textos para lectura cómoda */
+  body {
+    font-size: 16px; 
+  }
+  .hero-title {
+    font-size: 2.1rem !important; 
+    line-height: 1.2;
+  }
+  .hero-subtitle {
+    font-size: 1.1rem !important;
   }
   
-  #vista-catalogo {
-    padding-top: 1rem !important;
+  /* 3. Interacción táctil (botones más grandes y cómodos) */
+  .btn {
+    min-height: 48px; /* Estándar táctil (Touch target) */
+    font-size: 1.05rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px !important;
   }
   
+  /* 4. Ajustes en las tarjetas */
   .card-body {
     padding: 1.5rem !important;
   }
-  
-  #contenedor-filtros select {
+  .product-img {
+    height: 280px !important; /* Aprovecha el 100% del ancho con mejor altura */
+  }
+
+  /* 5. Vistas y Filtros */
+  #vista-catalogo {
+    padding-top: 1rem !important;
+  }
+  #contenedor-filtros select, #buscador {
+    min-height: 50px; /* Campos de formulario táctiles */
+    font-size: 1rem;
     margin-bottom: 10px;
   }
 
-  .hero-title {
-    font-size: 2rem !important;
+  /* Ajustes a carrusel e imágenes flotantes */
+  .hero-image-wrapper { clip-path: none; min-height: 250px; padding: 2rem 0; }
+  .b-feature-box { border-right: none; margin-bottom: 1.5rem; justify-content: flex-start; padding-left: 1rem; }
+  
+  #carouselDetalle .carousel-item img, 
+  #contenedor-imagen-detalle img {
+    height: 280px !important;
   }
 }
