@@ -10,7 +10,9 @@
   --font-body: 'Inter', sans-serif;
 }
 
-body { 
+/* Evitar scroll horizontal global en móviles */
+html, body {
+  overflow-x: hidden;
   background-color: var(--color-bg); 
   font-family: var(--font-body);
   color: var(--color-slate);
@@ -26,6 +28,11 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 /* ==========================================
    BOTONES Y COMPONENTES
    ========================================== */
+.btn {
+  /* Mejorar usabilidad táctil */
+  padding: 0.6rem 1.5rem;
+}
+   
 .btn-brand-orange {
   background-color: var(--color-orange);
   color: white;
@@ -75,11 +82,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   transform: scale(1.03); 
 }
 
-@media (max-width: 768px) {
-  .navbar-logo {
-    height: 48px;
-  }
-}
 .nav-link {
   font-weight: 500;
   color: var(--color-slate);
@@ -125,6 +127,9 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 
 .hero-image-wrapper img {
   max-width: 120%;
+  width: 80%;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   transform: translateX(10%) rotate(-5deg);
   filter: drop-shadow(-10px 10px 20px rgba(0,0,0,0.3));
 }
@@ -154,7 +159,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 /* ==========================================
    CATÁLOGO Y TARJETAS
    ========================================== */
-.card { border: none; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; background: white; }
+.card { border: none; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; background: white; width: 100%;}
 .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
 .product-img { height: 220px; object-fit: cover; border-radius: 12px 12px 0 0; padding: 1rem; background: #fff;}
 .badge-marca { background-color: var(--color-bg); color: var(--color-slate); border: 1px solid #e2e8f0; font-size: 0.75rem; }
@@ -168,14 +173,8 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 #reader { width: 100%; max-width: 450px; margin: 0 auto 20px auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-@media (max-width: 768px) {
-  .hero-image-wrapper { clip-path: none; min-height: 300px; }
-  .hero-title { font-size: 2.5rem; }
-  .b-feature-box { border-right: none; margin-bottom: 1.5rem; justify-content: flex-start; padding-left: 1rem; }
-}
-
 /* ==========================================
-   NUEVAS MEJORAS VISUALES (HERO, CARRUSEL, FADE-IN)
+   ANIMACIONES VISUALES
    ========================================== */
 .img-floating {
   animation: float 4s ease-in-out infinite;
@@ -246,17 +245,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 }
 .widget-carrito:hover { transform: scale(1.05); background-color: var(--color-orange-hover); }
 
-@media (max-width: 768px) {
-  .widget-carrito {
-    bottom: 20px;
-    right: 50%;
-    transform: translateX(50%);
-    width: 90%;
-    max-width: 350px;
-  }
-  .widget-carrito:hover { transform: translateX(50%) scale(1.02); }
-}
-
 .etiqueta-visual {
   position: absolute;
   top: 10px;
@@ -275,64 +263,88 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 }
 
 /* ==========================================
-   AJUSTES ESTRICTOS PARA MÓVILES (MOBILE FIRST)
+   AJUSTES ESPECÍFICOS PARA MÓVILES (MOBILE FIRST)
    ========================================== */
-@media (max-width: 768px) {
-  /* 1. Forzar exactamente 1 tarjeta por fila (1 columna ocupando 100%) */
-  #contenedor-productos > div,
-  #productos-destacados-preview > div {
-    width: 100% !important;
-    flex: 0 0 100% !important;
-    max-width: 100% !important;
-    margin-bottom: 1rem;
+@media (max-width: 767.98px) {
+  .navbar-logo {
+    height: 48px;
   }
-
-  /* 2. Ajustes de textos para lectura cómoda */
-  body {
-    font-size: 16px; 
+  
+  .navbar-custom {
+    padding: 0.5rem 1rem;
   }
+  
+  .nav-link {
+    padding: 0.8rem 0;
+    font-size: 1.1rem;
+  }
+  
+  .hero-section {
+    padding: 2rem 0 0 0;
+  }
+  
   .hero-title {
-    font-size: 2.1rem !important; 
-    line-height: 1.2;
+    font-size: 2.2rem !important;
+    text-align: center;
   }
+  
   .hero-subtitle {
-    font-size: 1.1rem !important;
-  }
-  
-  /* 3. Interacción táctil (botones más grandes y cómodos) */
-  .btn {
-    min-height: 48px; /* Estándar táctil (Touch target) */
-    font-size: 1.05rem !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 20px !important;
-  }
-  
-  /* 4. Ajustes en las tarjetas */
-  .card-body {
-    padding: 1.5rem !important;
-  }
-  .product-img {
-    height: 280px !important; /* Aprovecha el 100% del ancho con mejor altura */
-  }
-
-  /* 5. Vistas y Filtros */
-  #vista-catalogo {
-    padding-top: 1rem !important;
-  }
-  #contenedor-filtros select, #buscador {
-    min-height: 50px; /* Campos de formulario táctiles */
     font-size: 1rem;
-    margin-bottom: 10px;
+    text-align: center;
+    max-width: 100%;
+  }
+  
+  .hero-text-content {
+    padding-bottom: 2rem;
+  }
+  
+  .hero-text-content .btn {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    padding: 1rem !important; /* Touch target grande */
   }
 
-  /* Ajustes a carrusel e imágenes flotantes */
-  .hero-image-wrapper { clip-path: none; min-height: 250px; padding: 2rem 0; }
-  .b-feature-box { border-right: none; margin-bottom: 1.5rem; justify-content: flex-start; padding-left: 1rem; }
+  .hero-image-wrapper { 
+    clip-path: none; 
+    min-height: 250px; 
+  }
+  
+  .b-feature-box { 
+    border-right: none; 
+    margin-bottom: 1.5rem; 
+    justify-content: flex-start; 
+    padding-left: 1rem; 
+  }
   
   #carouselDetalle .carousel-item img, 
   #contenedor-imagen-detalle img {
-    height: 280px !important;
+    height: 250px !important;
   }
+  
+  #vista-catalogo {
+    padding-top: 1rem !important;
+  }
+  
+  .card-body {
+    padding: 1.25rem !important;
+  }
+
+  /* Asegurar que el input del buscador sea fácil de tocar */
+  #buscador, #filtro-categoria, #filtro-sucursal {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+  
+  #contenedor-filtros select {
+    margin-bottom: 10px;
+  }
+  
+  .widget-carrito {
+    bottom: 20px;
+    right: 50%;
+    transform: translateX(50%);
+    width: 90%;
+    max-width: 350px;
+  }
+  .widget-carrito:hover { transform: translateX(50%) scale(1.02); }
 }
