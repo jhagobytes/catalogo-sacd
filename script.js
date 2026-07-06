@@ -11,6 +11,13 @@ let carritoCotizacion = [];
 const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav');
 const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-84.wav');
 
+// FIX: Reconstructor dinámico de Cloudinary
+function reconstruirUrlCloudinary(id) {
+  if (!id) return "";
+  if (id.startsWith("http") || id.startsWith("data:image")) return id;
+  return "https://res.cloudinary.com/dzdhsdvs9/image/upload/" + id;
+}
+
 function cambiarVista(idVista) {
   const vistas = ['vista-inicio', 'vista-catalogo', 'vista-login', 'vista-admin'];
   vistas.forEach(v => {
@@ -117,16 +124,15 @@ function renderizarCategorias(categorias) {
 async function cargarCatalogoServidor() {
   const contenedor = document.getElementById('contenedor-productos');
   
-  // VERIFICACIÓN DE CACHÉ CON TIEMPO DE EXPIRACIÓN
   const cacheData = localStorage.getItem("catalogo_sacd_local");
   const cacheTime = localStorage.getItem("catalogo_sacd_time");
   const ahora = new Date().getTime();
-  const TIEMPO_EXPIRACION = 30 * 60 * 1000; // 30 minutos
+  const TIEMPO_EXPIRACION = 30 * 60 * 1000; 
   
   if (cacheData && cacheTime && (ahora - parseInt(cacheTime)) < TIEMPO_EXPIRACION) {
     catalogoCompleto = JSON.parse(cacheData);
     renderizarCatalogoLocal(); 
-    renderizarProductosDestacados(); // <-- Renderiza los destacados desde el caché
+    renderizarProductosDestacados(); 
   } else {
     mostrarCargando(true); 
     if (contenedor) contenedor.style.opacity = "0.5"; 
@@ -138,7 +144,7 @@ async function cargarCatalogoServidor() {
       localStorage.setItem("catalogo_sacd_local", JSON.stringify(resultado));
       localStorage.setItem("catalogo_sacd_time", ahora.toString());
       renderizarCatalogoLocal(); 
-      renderizarProductosDestacados(); // <-- Renderiza los destacados desde el servidor
+      renderizarProductosDestacados(); 
       if (contenedor) contenedor.style.opacity = "1";
       mostrarCargando(false);
     } else if (!cacheData) { 
@@ -148,10 +154,9 @@ async function cargarCatalogoServidor() {
       }
       mostrarCargando(false);
     } else {
-       // Si falla pero hay caché viejo, lo usamos por emergencia
        catalogoCompleto = JSON.parse(cacheData);
        renderizarCatalogoLocal(); 
-       renderizarProductosDestacados(); // <-- Renderiza los destacados desde el caché de emergencia
+       renderizarProductosDestacados(); 
        if (contenedor) contenedor.style.opacity = "1";
        mostrarCargando(false);
     }
@@ -258,7 +263,10 @@ function dibujarTarjetas(resultado) {
   }
 
   resultado.productos.forEach(p => {
-    const miniatura = (p.url || "").split(',')[0].trim();
+    // FIX: Reconstruir imagen usando Cloudinary o link nativo
+    const miniaturaRaw = (p.url || "").split(',')[0].trim();
+    const miniatura = reconstruirUrlCloudinary(miniaturaRaw);
+    
     let etiquetasHTML = "";
     if (p.etiquetas && p.etiquetas.length > 0) {
       const spans = p.etiquetas.map(e => `<span>${e}</span>`).join('');
@@ -296,7 +304,8 @@ function abrirDetalles(codigo) {
   if(!producto) return;
 
   const cantidadStock = (producto.stock !== undefined && producto.stock !== null) ? parseInt(producto.stock) : 0;
-  const urls = (producto.url || "").split(',').map(u => u.trim()).filter(u => u !== "");
+  // FIX: Reconstruir conjunto de imágenes para carrusel
+  const urls = (producto.url || "").split(',').map(u => reconstruirUrlCloudinary(u.trim())).filter(u => u !== "");
   let htmlImagen = "";
 
   if (urls.length > 1) {
@@ -331,24 +340,7 @@ function abrirDetalles(codigo) {
   document.getElementById('detalle-marca').innerText = producto.marca;
   document.getElementById('detalle-codigo').innerText = "Cód: " + producto.codigo;
   document.getElementById('detalle-caracteristicas').innerText = producto.caracteristicas || "Sin características detalladas.";
-  document.getElementById('detalle-stock-badge').innerHTML = obtenerEtiquetaStock(cantidadStock);
-
-  const btnPedir = document.getElementById('detalle-btn-pedir');
-  if(cantidadStock > 0) {
-    btnPedir.disabled = false;
-    btnPedir.className = "btn btn-whatsapp fw-bold px-4 py-2 rounded-pill d-flex align-items-center gap-2";
-    btnPedir.innerHTML = '<i class="fa-brands fa-whatsapp fs-5"></i> Pedir por WhatsApp';
-    btnPedir.onclick = () => {
-      bootstrap.Modal.getInstance(document.getElementById('modalDetalles')).hide();
-      iniciarContacto(producto.codigo);
-    };
-  } else {
-    btnPedir.disabled = true;
-    btnPedir.className = "btn btn-secondary fw-bold px-4 py-2 rounded-pill";
-    btnPedir.innerText = "Agotado Temporalmente";
-  }
-
-  new bootstrap.Modal(document.getElementById('modalDetalles')).show();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalles')).show();
 }
 
 function obtenerEtiquetaStock(stock) {
@@ -359,12 +351,16 @@ function obtenerEtiquetaStock(stock) {
 
 async function iniciarContacto(codigo) {
   const respuesta = await llamarServidor('obtenerContactoVendedor', { codigo: codigo });
-  if (!respuesta || respuesta.error) { alert(respuesta ? respuesta.error : "Error de red."); return; }
+  if (!respuesta || respuesta.error) { 
+  alert(respuesta ? respuesta.error : "Error de red."); 
+  return; 
+  }
   let htmlBotones = '';
   respuesta.vendedores.forEach(v => { 
     htmlBotones += `<button class="btn btn-outline-success btn-lg fw-bold w-100 mb-3 d-flex justify-content-between align-items-center rounded-4" onclick="abrirWhatsApp('${v.numero}', '${v.nombre}', '${respuesta.codigo}')"><span>💬 Hablar con ${v.nombre}</span><span class="badge bg-success text-wrap p-2 rounded-pill" style="font-size: 0.75rem;">📍 ${v.sucursal}</span></button>`; 
   });
-  document.getElementById('lista-vendedores').innerHTML = htmlBotones; new bootstrap.Modal(document.getElementById('modalVendedores')).show();
+  document.getElementById('lista-vendedores').innerHTML = htmlBotones; 
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalVendedores')).show();
 }
 
 function abrirWhatsApp(numero, nombre, cod) { window.open(`https://wa.me/${numero}?text=${encodeURIComponent(`¡Hola, ${nombre}! Estoy interesado en el producto: ${cod}. ¿Tienen disponibilidad?`)}`, '_blank'); }
@@ -531,10 +527,22 @@ async function cerrarSesion() {
   cambiarVista('vista-inicio'); 
 }
 
+// FIX: Previsualizador con reconstructor de URL
 function previsualizarImagen() {
-  const url = document.getElementById('n_url').value; const preview = document.getElementById('preview-container'); const img = document.getElementById('img-preview');
-  const primerUrl = (url || "").split(',')[0].trim();
-  if (primerUrl && primerUrl.startsWith('http')) { img.src = primerUrl; preview.style.display = 'block'; img.onerror = function() { alert("⚠️ URL inválida."); preview.style.display = 'none'; }; } else { preview.style.display = 'none'; }
+  const url = document.getElementById('n_url').value; 
+  const preview = document.getElementById('preview-container'); 
+  const img = document.getElementById('img-preview');
+  
+  const primerUrlRaw = (url || "").split(',')[0].trim();
+  const urlFinal = reconstruirUrlCloudinary(primerUrlRaw);
+  
+  if (urlFinal && urlFinal.startsWith('http')) { 
+    img.src = urlFinal; 
+    preview.style.display = 'block'; 
+    img.onerror = function() { alert("⚠️ URL inválida."); preview.style.display = 'none'; }; 
+  } else { 
+    preview.style.display = 'none'; 
+  }
 }
 
 async function cargarTablaAdmin() {
@@ -611,10 +619,9 @@ async function guardarNuevo() {
       return elemento ? elemento.value : "";
     };
 
-    // SINCRONIZACIÓN: Captura de etiquetas (Checkboxes en HTML)
     const etiquetasSeleccionadas = Array.from(document.querySelectorAll('.etiqueta-checkbox:checked'))
                                         .map(cb => cb.value)
-                                        .join(','); // Convertimos el array a un string separado por comas
+                                        .join(',');
 
     const datosNuevoProducto = {
       codigo: obtenerValorSeguro('n_codigo'), 
@@ -627,7 +634,7 @@ async function guardarNuevo() {
       stock: obtenerValorSeguro('n_stock'),
       pMayor: obtenerValorSeguro('n_pmayor'),
       pMenor: obtenerValorSeguro('n_pmenor'),
-      etiquetas: etiquetasSeleccionadas // Enviamos el string listo al backend
+      etiquetas: etiquetasSeleccionadas 
     };
 
     if (!datosNuevoProducto.codigo || !datosNuevoProducto.nombre) {
@@ -660,6 +667,7 @@ async function guardarNuevo() {
     }
   }
 }
+
 function agregarAlCarrito(codigo, nombre) {
   const item = carritoCotizacion.find(i => i.codigo === codigo);
   if (item) item.cantidad++; else carritoCotizacion.push({codigo, nombre, cantidad: 1});
@@ -797,9 +805,8 @@ function renderizarProductosDestacados() {
   const contenedor = document.getElementById('productos-destacados-preview');
   if (!contenedor) return;
 
-  contenedor.innerHTML = ""; // Limpiar el contenedor
+  contenedor.innerHTML = ""; 
 
-  // Filtramos solo los productos que tengan al menos una etiqueta
   const productosDestacados = catalogoCompleto.filter(p => p.etiquetas && p.etiquetas.length > 0);
 
   if (productosDestacados.length === 0) {
@@ -807,12 +814,13 @@ function renderizarProductosDestacados() {
     return;
   }
 
-  // Opcional: Limitar a mostrar solo los primeros 3 o 4 productos en la página principal
   const productosMostrar = productosDestacados.slice(0, 3); 
 
   productosMostrar.forEach(p => {
-    const miniatura = (p.url || "").split(',')[0].trim();
-    // Tomamos la primera etiqueta para destacarla, o puedes iterar si quieres mostrar varias
+    // FIX: Aplicar reconstructor también a destacados
+    const miniaturaRaw = (p.url || "").split(',')[0].trim();
+    const miniatura = reconstruirUrlCloudinary(miniaturaRaw);
+    
     const etiquetaPrincipal = p.etiquetas[0]; 
 
     const htmlCard = `
