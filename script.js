@@ -542,8 +542,12 @@ async function guardarActualizacion() {
   if(res) {
     alert(res.mensaje);
     if (res.mensaje.includes("Éxito")) {
+      
+      // NUEVO: Aseguramos que se borre la llave de tiempo correcta
       localStorage.removeItem("catalogo_sacd_local");
-      localStorage.removeItem("catalogo_sacd_time");
+      localStorage.removeItem("tiempo_cache_sacd");
+      localStorage.removeItem("catalogo_sacd_time"); 
+      
       const formActualizar = document.getElementById('formActualizar');
       if (formActualizar) formActualizar.reset(); 
       
@@ -560,8 +564,10 @@ async function guardarActualizacion() {
 async function forzarLimpiarCacheUI() {
   if (!confirm("¿Seguro que deseas restablecer la memoria caché? Esto obligará al sistema a leer los datos reales en la siguiente visita.")) return;
   
+  // NUEVO: Limpiamos todas las llaves de caché (la nueva y la vieja por si acaso)
   localStorage.removeItem("catalogo_sacd_local");
-  localStorage.removeItem("catalogo_sacd_time");
+  localStorage.removeItem("tiempo_cache_sacd");
+  localStorage.removeItem("catalogo_sacd_time"); 
 
   const status = document.getElementById('status');
   try {
@@ -583,6 +589,7 @@ async function forzarLimpiarCacheUI() {
     }
 
     await cargarTablaAdmin();
+    // Al haber borrado el localStorage arriba, esta función descargará lo nuevo obligatoriamente
     await cargarCatalogoServidor();
 
     setTimeout(() => {
@@ -748,6 +755,11 @@ async function guardarNuevo() {
     alert(respuesta ? respuesta.mensaje : "Error de comunicación con el servidor.");
 
     if (respuesta && respuesta.mensaje && respuesta.mensaje.includes("Éxito")) {
+      
+      // NUEVO: Borramos la caché porque acabamos de agregar un producto nuevo
+      localStorage.removeItem("catalogo_sacd_local");
+      localStorage.removeItem("tiempo_cache_sacd");
+      
       const formulario = document.getElementById('formNuevo');
       if (formulario) formulario.reset();
       
