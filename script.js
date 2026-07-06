@@ -11,6 +11,14 @@ let carritoCotizacion = [];
 const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav');
 const errorSound = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-84.wav');
 
+// Función auxiliar para prevenir inyección de código (XSS) al usar innerHTML
+function sanitizarXSS(str) {
+  if (!str) return "";
+  return String(str).replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+  });
+}
+
 // FIX: Reconstructor dinámico de Cloudinary
 function reconstruirUrlCloudinary(id) {
   if (!id) return "";
@@ -49,7 +57,7 @@ function cambiarVista(idVista) {
     if (navPublico) navPublico.style.display = 'none';
   }
 
-  if(idVista === 'vista-login') setTimeout(() => document.getElementById('clave').focus(), 100);
+  if(idVista === 'vista-login') setTimeout(() => { const el = document.getElementById('clave'); if(el) el.focus(); }, 100);
   window.scrollTo(0,0);
 }
 
@@ -117,7 +125,7 @@ function renderizarCategorias(categorias) {
   const select = document.getElementById('filtro-categoria');
   if(select) {
     select.innerHTML = '<option value="TODO">Todas las Categorías</option>';
-    categorias.forEach(c => { select.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`; });
+    categorias.forEach(c => { select.innerHTML += `<option value="${sanitizarXSS(c.nombre)}">${sanitizarXSS(c.nombre)}</option>`; });
   }
 }
 
@@ -188,7 +196,7 @@ function renderizarCatalogoLocal() {
     if (todasSucursales.size > 1) {
       divSucursal.style.display = "block";
       if (selectSucursal.options.length <= 1) {
-        todasSucursales.forEach(s => selectSucursal.innerHTML += `<option value="${s}">${s}</option>`);
+        todasSucursales.forEach(s => selectSucursal.innerHTML += `<option value="${sanitizarXSS(s)}">${sanitizarXSS(s)}</option>`);
         const modalSucursal = document.getElementById('sucursal-envio');
         if (modalSucursal) modalSucursal.innerHTML = selectSucursal.innerHTML;
       }
@@ -263,13 +271,17 @@ function dibujarTarjetas(resultado) {
   }
 
   resultado.productos.forEach(p => {
-    // FIX: Reconstruir imagen usando Cloudinary o link nativo
     const miniaturaRaw = (p.url || "").split(',')[0].trim();
     const miniatura = reconstruirUrlCloudinary(miniaturaRaw);
     
+    // Sanitizamos los datos inyectados
+    const nombreSeguro = sanitizarXSS(p.nombre);
+    const marcaSegura = sanitizarXSS(p.marca);
+    const codigoSeguro = sanitizarXSS(p.codigo);
+
     let etiquetasHTML = "";
     if (p.etiquetas && p.etiquetas.length > 0) {
-      const spans = p.etiquetas.map(e => `<span>${e}</span>`).join('');
+      const spans = p.etiquetas.map(e => `<span>${sanitizarXSS(e)}</span>`).join('');
       etiquetasHTML = `<div class="etiqueta-visual">${spans}</div>`;
     }
 
@@ -279,14 +291,14 @@ function dibujarTarjetas(resultado) {
     col.innerHTML = `
       ${etiquetasHTML}
       <div class="card h-100 shadow-sm border-0">
-        <img src="${miniatura}" class="card-img-top product-img" style="cursor:pointer;" onclick="abrirDetalles('${p.codigo}')" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">
+        <img src="${miniatura}" class="card-img-top product-img" style="cursor:pointer;" onclick="abrirDetalles('${codigoSeguro}')" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">
         <div class="card-body d-flex flex-column p-4">
-          <span class="badge badge-marca mb-2 align-self-start py-1 px-3 rounded-pill">${p.marca}</span>
-          <h5 class="card-title fw-bold text-dark mb-1" style="font-size:1.1rem; font-family: var(--font-heading);">${p.nombre}</h5>
-          <p class="text-muted small mb-3">Cód: ${p.codigo}</p>
+          <span class="badge badge-marca mb-2 align-self-start py-1 px-3 rounded-pill">${marcaSegura}</span>
+          <h5 class="card-title fw-bold text-dark mb-1" style="font-size:1.1rem; font-family: var(--font-heading);">${nombreSeguro}</h5>
+          <p class="text-muted small mb-3">Cód: ${codigoSeguro}</p>
           
           <div class="mt-auto">
-            <button class="btn btn-outline-primary fw-bold w-100 rounded-pill py-2" onclick="agregarAlCarrito('${p.codigo}', '${p.nombre}')">
+            <button class="btn btn-outline-primary fw-bold w-100 rounded-pill py-2" onclick="agregarAlCarrito('${codigoSeguro}', '${nombreSeguro}')">
               <i class="fa-solid fa-plus"></i> Añadir a cotización
             </button>
           </div>
@@ -304,7 +316,6 @@ function abrirDetalles(codigo) {
   if(!producto) return;
 
   const cantidadStock = (producto.stock !== undefined && producto.stock !== null) ? parseInt(producto.stock) : 0;
-  // FIX: Reconstruir conjunto de imágenes para carrusel
   const urls = (producto.url || "").split(',').map(u => reconstruirUrlCloudinary(u.trim())).filter(u => u !== "");
   let htmlImagen = "";
 
@@ -335,12 +346,24 @@ function abrirDetalles(codigo) {
     htmlImagen = `<img src="${imgUrl}" class="img-fluid w-100" style="object-fit: contain; height: 350px;" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">`;
   }
 
-  document.getElementById('contenedor-imagen-detalle').innerHTML = htmlImagen;
-  document.getElementById('detalle-nombre').innerText = producto.nombre;
-  document.getElementById('detalle-marca').innerText = producto.marca;
-  document.getElementById('detalle-codigo').innerText = "Cód: " + producto.codigo;
-  document.getElementById('detalle-caracteristicas').innerText = producto.caracteristicas || "Sin características detalladas.";
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalles')).show();
+  // FIX: Validaciones de existencia en el DOM antes de asignar valores
+  const elContenedorImg = document.getElementById('contenedor-imagen-detalle');
+  if (elContenedorImg) elContenedorImg.innerHTML = htmlImagen;
+
+  const elDetalleNombre = document.getElementById('detalle-nombre');
+  if (elDetalleNombre) elDetalleNombre.innerText = producto.nombre;
+
+  const elDetalleMarca = document.getElementById('detalle-marca');
+  if (elDetalleMarca) elDetalleMarca.innerText = producto.marca;
+
+  const elDetalleCodigo = document.getElementById('detalle-codigo');
+  if (elDetalleCodigo) elDetalleCodigo.innerText = "Cód: " + producto.codigo;
+
+  const elDetalleCaracteristicas = document.getElementById('detalle-caracteristicas');
+  if (elDetalleCaracteristicas) elDetalleCaracteristicas.innerText = producto.caracteristicas || "Sin características detalladas.";
+
+  const modalDetalles = document.getElementById('modalDetalles');
+  if (modalDetalles) bootstrap.Modal.getOrCreateInstance(modalDetalles).show();
 }
 
 function obtenerEtiquetaStock(stock) {
@@ -357,10 +380,14 @@ async function iniciarContacto(codigo) {
   }
   let htmlBotones = '';
   respuesta.vendedores.forEach(v => { 
-    htmlBotones += `<button class="btn btn-outline-success btn-lg fw-bold w-100 mb-3 d-flex justify-content-between align-items-center rounded-4" onclick="abrirWhatsApp('${v.numero}', '${v.nombre}', '${respuesta.codigo}')"><span>💬 Hablar con ${v.nombre}</span><span class="badge bg-success text-wrap p-2 rounded-pill" style="font-size: 0.75rem;">📍 ${v.sucursal}</span></button>`; 
+    htmlBotones += `<button class="btn btn-outline-success btn-lg fw-bold w-100 mb-3 d-flex justify-content-between align-items-center rounded-4" onclick="abrirWhatsApp('${v.numero}', '${sanitizarXSS(v.nombre)}', '${respuesta.codigo}')"><span>💬 Hablar con ${sanitizarXSS(v.nombre)}</span><span class="badge bg-success text-wrap p-2 rounded-pill" style="font-size: 0.75rem;">📍 ${sanitizarXSS(v.sucursal)}</span></button>`; 
   });
-  document.getElementById('lista-vendedores').innerHTML = htmlBotones; 
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalVendedores')).show();
+  
+  const elListaVendedores = document.getElementById('lista-vendedores');
+  if (elListaVendedores) {
+    elListaVendedores.innerHTML = htmlBotones; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalVendedores')).show();
+  }
 }
 
 function abrirWhatsApp(numero, nombre, cod) { window.open(`https://wa.me/${numero}?text=${encodeURIComponent(`¡Hola, ${nombre}! Estoy interesado en el producto: ${cod}. ¿Tienen disponibilidad?`)}`, '_blank'); }
@@ -370,35 +397,49 @@ async function inicializarAdmin() {
   if (listas) llenarSelects(listas);
   cargarTablaAdmin();
   
-  document.getElementById('adminTabs').addEventListener('shown.bs.tab', async function (event) {
-    await detenerCamara();
-    if (event.target.id === 'nuevo-tab') {
-      document.getElementById('n_metodo_codigo').value = 'manual'; cambiarMetodo('nuevo');
-    } else if (event.target.id === 'actualizar-tab') {
-      document.getElementById('a_metodo_codigo').value = 'manual'; cambiarMetodo('actualizar');
-    }
-  });
+  const elAdminTabs = document.getElementById('adminTabs');
+  if (elAdminTabs) {
+    elAdminTabs.addEventListener('shown.bs.tab', async function (event) {
+      await detenerCamara();
+      if (event.target.id === 'nuevo-tab') {
+        const elMetodoN = document.getElementById('n_metodo_codigo');
+        if (elMetodoN) { elMetodoN.value = 'manual'; cambiarMetodo('nuevo'); }
+      } else if (event.target.id === 'actualizar-tab') {
+        const elMetodoA = document.getElementById('a_metodo_codigo');
+        if (elMetodoA) { elMetodoA.value = 'manual'; cambiarMetodo('actualizar'); }
+      }
+    });
+  }
+
   ['a_codigo', 'n_codigo'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('blur', function() { this.value = this.value.trim().toUpperCase(); }); });
 }
 
 function llenarSelects(listas) {
-  document.getElementById('n_categoria').innerHTML = '<option value="">Seleccione...</option>' + listas.categorias.map(c => `<option value="${c.prefijo}">${c.prefijo} - ${c.nombre}</option>`).join('');
-  document.querySelectorAll('.sucursal-select').forEach(el => el.innerHTML = '<option value="">Seleccione...</option>' + listas.sucursales.map(s => `<option value="${s}">${s}</option>`).join(''));
+  const elNCategoria = document.getElementById('n_categoria');
+  if (elNCategoria) {
+    elNCategoria.innerHTML = '<option value="">Seleccione...</option>' + listas.categorias.map(c => `<option value="${sanitizarXSS(c.prefijo)}">${sanitizarXSS(c.prefijo)} - ${sanitizarXSS(c.nombre)}</option>`).join('');
+  }
+  
+  document.querySelectorAll('.sucursal-select').forEach(el => {
+    el.innerHTML = '<option value="">Seleccione...</option>' + listas.sucursales.map(s => `<option value="${sanitizarXSS(s)}">${sanitizarXSS(s)}</option>`).join('');
+  });
 }
 
 async function cambiarMetodo(pestaña) {
-  const metodo = document.getElementById(pestaña === 'nuevo' ? 'n_metodo_codigo' : 'a_metodo_codigo').value;
+  const elMetodo = document.getElementById(pestaña === 'nuevo' ? 'n_metodo_codigo' : 'a_metodo_codigo');
+  const metodo = elMetodo ? elMetodo.value : 'manual';
   const input = document.getElementById(pestaña === 'nuevo' ? 'n_codigo' : 'a_codigo');
   const btnRefresh = document.getElementById('btn-refresh-codigo');
 
   await detenerCamara();
 
-  if (metodo === 'auto' && pestaña === 'nuevo') {
-    input.readOnly = true; input.value = ""; btnRefresh.style.display = 'block';
+  if (metodo === 'auto' && pestaña === 'nuevo' && input) {
+    input.readOnly = true; input.value = ""; 
+    if (btnRefresh) btnRefresh.style.display = 'block';
     generarCodigoAutomatico();
-  } else if (metodo === 'manual') {
+  } else if (metodo === 'manual' && input) {
     input.readOnly = false; if(btnRefresh) btnRefresh.style.display = 'none';
-  } else if (metodo === 'scanner') {
+  } else if (metodo === 'scanner' && input) {
     input.readOnly = false; if(btnRefresh) btnRefresh.style.display = 'none';
     targetInputActual = pestaña === 'nuevo' ? "n_codigo" : "a_codigo";
     iniciarCamara();
@@ -406,12 +447,16 @@ async function cambiarMetodo(pestaña) {
 }
 
 function categoriaCambiada() {
-  if (document.getElementById('n_metodo_codigo').value === 'auto') generarCodigoAutomatico();
+  const elMetodoN = document.getElementById('n_metodo_codigo');
+  if (elMetodoN && elMetodoN.value === 'auto') generarCodigoAutomatico();
 }
 
 async function generarCodigoAutomatico() {
-  const prefijo = document.getElementById('n_categoria').value;
+  const elPrefijo = document.getElementById('n_categoria');
+  const prefijo = elPrefijo ? elPrefijo.value : "";
   const inputCodigo = document.getElementById('n_codigo');
+  
+  if (!inputCodigo) return;
   if (!prefijo) { inputCodigo.value = "⚠️ Seleccione categoría"; return; }
   
   inputCodigo.value = "⏳ Generando...";
@@ -422,41 +467,75 @@ async function generarCodigoAutomatico() {
 async function iniciarCamara() {
   if (camaraActiva) return;
   const status = document.getElementById('status');
-  document.getElementById('contenedor-camara-global').style.display = 'block';
+  const contenedorCamara = document.getElementById('contenedor-camara-global');
+  if (contenedorCamara) contenedorCamara.style.display = 'block';
+  
   try {
     if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
     await html5QrCode.start( { facingMode: "environment" }, { fps: 15, qrbox: function(vw, vh) { return { width: Math.floor(Math.min(vw, vh) * 0.85), height: Math.floor(Math.min(vw, vh) * 0.6) }; } },
       function(decodedText) {
         const ahora = Date.now(); if (ahora - ultimoEscaneoTime < COOLDOWN_TIME) return;
         ultimoEscaneoTime = ahora; scanSound.currentTime = 0; scanSound.play().catch(()=>{});
-        document.getElementById(targetInputActual).value = decodedText;
-        status.innerHTML = "✅ ¡Código capturado! (" + decodedText + ")"; status.className = "text-success small fw-bold m-0";
-        setTimeout(() => { status.innerHTML = "📷 Escáner Activo"; status.className = "text-primary small fw-bold m-0"; }, COOLDOWN_TIME);
+        const targetInput = document.getElementById(targetInputActual);
+        if (targetInput) targetInput.value = decodedText;
+        if (status) {
+          status.innerHTML = "✅ ¡Código capturado! (" + sanitizarXSS(decodedText) + ")"; status.className = "text-success small fw-bold m-0";
+          setTimeout(() => { status.innerHTML = "📷 Escáner Activo"; status.className = "text-primary small fw-bold m-0"; }, COOLDOWN_TIME);
+        }
       }, function() {}
     );
-    camaraActiva = true; status.innerHTML = "📷 Escáner Activo - Apunta al código";
+    camaraActiva = true; 
+    if (status) status.innerHTML = "📷 Escáner Activo - Apunta al código";
   } catch(err) {
     errorSound.currentTime = 0; errorSound.play().catch(()=>{});
-    status.innerHTML = "❌ Error de cámara. Verifica permisos."; status.className = "text-danger small fw-bold m-0"; camaraActiva = false;
+    if (status) {
+      status.innerHTML = "❌ Error de cámara. Verifica permisos."; status.className = "text-danger small fw-bold m-0"; 
+    }
+    camaraActiva = false;
   }
 }
 
+// FIX: Resiliencia al apagar la cámara
 async function detenerCamara() {
   if (html5QrCode && camaraActiva) {
-    try { await html5QrCode.stop(); camaraActiva = false; document.getElementById('contenedor-camara-global').style.display = 'none'; } 
-    catch (err) { console.error("Error al apagar cámara", err); }
+    try { 
+      await html5QrCode.stop(); 
+    } catch (err) { 
+      console.warn("La cámara se forzó a detenerse o ya estaba inactiva", err); 
+    } finally {
+      camaraActiva = false; 
+      const elCamaraGlobal = document.getElementById('contenedor-camara-global');
+      if (elCamaraGlobal) elCamaraGlobal.style.display = 'none'; 
+    }
   }
 }
 
 function apagarCamaraManual() {
   detenerCamara();
-  if (document.getElementById('n_metodo_codigo').value === 'scanner') { document.getElementById('n_metodo_codigo').value = 'manual'; cambiarMetodo('nuevo'); }
-  if (document.getElementById('a_metodo_codigo').value === 'scanner') { document.getElementById('a_metodo_codigo').value = 'manual'; cambiarMetodo('actualizar'); }
+  const nMetodo = document.getElementById('n_metodo_codigo');
+  const aMetodo = document.getElementById('a_metodo_codigo');
+  
+  if (nMetodo && nMetodo.value === 'scanner') { nMetodo.value = 'manual'; cambiarMetodo('nuevo'); }
+  if (aMetodo && aMetodo.value === 'scanner') { aMetodo.value = 'manual'; cambiarMetodo('actualizar'); }
 }
 
 async function guardarActualizacion() {
   const boton = document.getElementById('btnActualizar');
-  const datos = { codigo: document.getElementById('a_codigo').value, sucursal: document.getElementById('a_sucursal').value, stock: document.getElementById('a_stock').value, pMayor: document.getElementById('a_pmayor_upd').value, pMenor: document.getElementById('a_pmenor_upd').value };
+  if (!boton) return;
+  
+  const elCodigo = document.getElementById('a_codigo');
+  const elSucursal = document.getElementById('a_sucursal');
+  const elStock = document.getElementById('a_stock');
+  const elPMayor = document.getElementById('a_pmayor_upd');
+  const elPMenor = document.getElementById('a_pmenor_upd');
+
+  const datos = { 
+    codigo: elCodigo ? elCodigo.value : "", 
+    sucursal: elSucursal ? elSucursal.value : "", 
+    stock: elStock ? elStock.value : "", 
+    pMayor: elPMayor ? elPMayor.value : "", 
+    pMenor: elPMenor ? elPMenor.value : "" 
+  };
   
   if(!datos.codigo || !datos.sucursal) { alert("El código y la sucursal son obligatorios para saber qué actualizar."); return; }
   
@@ -469,8 +548,11 @@ async function guardarActualizacion() {
     if (res.mensaje.includes("Éxito")) {
       localStorage.removeItem("catalogo_sacd_local");
       localStorage.removeItem("catalogo_sacd_time");
-      document.getElementById('formActualizar').reset(); 
-      document.getElementById('a_metodo_codigo').value = 'manual'; 
+      const formActualizar = document.getElementById('formActualizar');
+      if (formActualizar) formActualizar.reset(); 
+      
+      const aMetodo = document.getElementById('a_metodo_codigo');
+      if (aMetodo) aMetodo.value = 'manual'; 
       cambiarMetodo('actualizar'); 
       
       await cargarTablaAdmin(); 
@@ -488,7 +570,8 @@ async function forzarLimpiarCacheUI() {
   const status = document.getElementById('status');
   try {
     if (status) {
-      document.getElementById('contenedor-camara-global').style.display = 'block'; 
+      const elContenedorCam = document.getElementById('contenedor-camara-global');
+      if(elContenedorCam) elContenedorCam.style.display = 'block'; 
       status.innerHTML = "⏳ Restableciendo caché en el servidor y local...";
       status.className = "text-warning small fw-bold m-0";
     }
@@ -507,14 +590,18 @@ async function forzarLimpiarCacheUI() {
     await cargarCatalogoServidor();
 
     setTimeout(() => {
-      if (status && !camaraActiva) document.getElementById('contenedor-camara-global').style.display = 'none';
+      if (status && !camaraActiva) {
+        const elContenedorCam = document.getElementById('contenedor-camara-global');
+        if (elContenedorCam) elContenedorCam.style.display = 'none';
+      }
     }, 4000);
 
   } catch (error) {
     errorSound.currentTime = 0; 
     errorSound.play().catch(() => {}); 
     if (status) {
-      document.getElementById('contenedor-camara-global').style.display = 'block';
+      const elContenedorCam = document.getElementById('contenedor-camara-global');
+      if (elContenedorCam) elContenedorCam.style.display = 'block';
       status.innerHTML = `❌ Error: ${error.message}`;
       status.className = "text-danger small fw-bold m-0";
     }
@@ -527,12 +614,14 @@ async function cerrarSesion() {
   cambiarVista('vista-inicio'); 
 }
 
-// FIX: Previsualizador con reconstructor de URL
 function previsualizarImagen() {
-  const url = document.getElementById('n_url').value; 
+  const elNUrl = document.getElementById('n_url');
+  const url = elNUrl ? elNUrl.value : ""; 
   const preview = document.getElementById('preview-container'); 
   const img = document.getElementById('img-preview');
   
+  if(!preview || !img) return;
+
   const primerUrlRaw = (url || "").split(',')[0].trim();
   const urlFinal = reconstruirUrlCloudinary(primerUrlRaw);
   
@@ -551,12 +640,17 @@ async function cargarTablaAdmin() {
   if (Array.isArray(productos) && Array.isArray(inventario) && tbody) {
     tbody.innerHTML = productos.map(p => {
        let stockSucursal = inventario.filter(inv => String(inv.codigo).trim().toUpperCase() === String(p.codigo).trim().toUpperCase());
-       if(stockSucursal.length === 0) return `<tr><td>${p.codigo}</td><td>${p.nombre}</td><td><span class="badge bg-light text-dark border">${p.categoria}</span></td><td colspan="4" class="text-center text-muted text-uppercase small">Sin inventario asignado</td></tr>`;
-       return stockSucursal.map(inv => `<tr><td class="fw-bold">${p.codigo}</td><td>${p.nombre}</td><td><span class="badge bg-light text-dark border">${p.categoria}</span></td><td><span class="badge bg-secondary rounded-pill px-2">${inv.sucursal}</span></td><td>Bs. ${inv.pMayor || "-"}</td><td>Bs. ${inv.pMenor || "-"}</td><td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${inv.stock}</td></tr>`).join('');
+       const safeCodigo = sanitizarXSS(p.codigo);
+       const safeNombre = sanitizarXSS(p.nombre);
+       const safeCategoria = sanitizarXSS(p.categoria);
+
+       if(stockSucursal.length === 0) return `<tr><td>${safeCodigo}</td><td>${safeNombre}</td><td><span class="badge bg-light text-dark border">${safeCategoria}</span></td><td colspan="4" class="text-center text-muted text-uppercase small">Sin inventario asignado</td></tr>`;
+       return stockSucursal.map(inv => `<tr><td class="fw-bold">${safeCodigo}</td><td>${safeNombre}</td><td><span class="badge bg-light text-dark border">${safeCategoria}</span></td><td><span class="badge bg-secondary rounded-pill px-2">${sanitizarXSS(inv.sucursal)}</span></td><td>Bs. ${sanitizarXSS(inv.pMayor) || "-"}</td><td>Bs. ${sanitizarXSS(inv.pMenor) || "-"}</td><td class="${inv.stock > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}">${sanitizarXSS(inv.stock)}</td></tr>`).join('');
     }).join('');
   }
 }
 
+// FIX: A11y (aria-hidden) gestionado globalmente
 document.addEventListener("DOMContentLoaded", function() {
   const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
   const observer = new IntersectionObserver((entries, observer) => {
@@ -570,6 +664,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
   document.querySelectorAll('.fade-in').forEach(element => {
     observer.observe(element);
+  });
+
+  const modales = ['modalDetalles', 'modalCarrito', 'modalVendedores'];
+  modales.forEach(idModal => {
+    const modalEl = document.getElementById(idModal);
+    if (modalEl) {
+      modalEl.addEventListener('hide.bs.modal', function () {
+        if (document.activeElement && modalEl.contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
+      });
+    }
   });
 });
 
@@ -674,7 +780,8 @@ function agregarAlCarrito(codigo, nombre) {
   
   const widget = document.getElementById('widget-carrito');
   if (widget) widget.style.display = "block";
-  document.getElementById('widget-items').innerText = carritoCotizacion.length + (carritoCotizacion.length === 1 ? " ítem" : " ítems");
+  const widgetItems = document.getElementById('widget-items');
+  if (widgetItems) widgetItems.innerText = carritoCotizacion.length + (carritoCotizacion.length === 1 ? " ítem" : " ítems");
 }
 
 function abrirModalCarrito() {
@@ -695,11 +802,11 @@ function abrirModalCarrito() {
       lista.innerHTML += `
         <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
           <div>
-            <h6 class="mb-0 fw-bold text-dark">${item.nombre}</h6>
-            <small class="text-muted">Cód: ${item.codigo}</small>
+            <h6 class="mb-0 fw-bold text-dark">${sanitizarXSS(item.nombre)}</h6>
+            <small class="text-muted">Cód: ${sanitizarXSS(item.codigo)}</small>
           </div>
           <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary rounded-pill text-white px-3">x${item.cantidad}</span>
+            <span class="badge bg-primary rounded-pill text-white px-3">x${sanitizarXSS(item.cantidad)}</span>
             <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="quitarDelCarrito(${index})"><i class="fa-solid fa-trash"></i></button>
           </div>
         </li>`;
@@ -713,7 +820,7 @@ function abrirModalCarrito() {
       let optionsHTML = '<option value="">Selecciona una sucursal...</option>';
       Array.from(filtroGlobal.options).forEach(opt => {
         if (opt.value !== "TODAS") {
-          optionsHTML += `<option value="${opt.value}">${opt.text}</option>`;
+          optionsHTML += `<option value="${sanitizarXSS(opt.value)}">${sanitizarXSS(opt.text)}</option>`;
         }
       });
       selectSucursal.innerHTML = optionsHTML;
@@ -729,7 +836,7 @@ function abrirModalCarrito() {
   }
   
   const modalObj = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCarrito'));
-  modalObj.show();
+  if (modalObj) modalObj.show();
 }
 
 function quitarDelCarrito(index) {
@@ -748,8 +855,11 @@ function vaciarCarrito() {
   carritoCotizacion = [];
   const widget = document.getElementById('widget-carrito');
   if(widget) widget.style.display = "none";
-  const modal = bootstrap.Modal.getInstance(document.getElementById('modalCarrito'));
-  if(modal) modal.hide();
+  const modalEl = document.getElementById('modalCarrito');
+  if (modalEl) {
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if(modal) modal.hide();
+  }
 }
 
 async function cargarVendedores(sucursalForzada = null) {
@@ -764,7 +874,7 @@ async function cargarVendedores(sucursalForzada = null) {
     return;
   }
   
-  listaContainer.innerHTML = `<div class="text-center p-3"><div class="spinner-border text-orange spinner-border-sm mb-2"></div><br><small class="fw-bold text-muted">Buscando asesores en ${sucursal}...</small></div>`;
+  listaContainer.innerHTML = `<div class="text-center p-3"><div class="spinner-border text-orange spinner-border-sm mb-2"></div><br><small class="fw-bold text-muted">Buscando asesores en ${sanitizarXSS(sucursal)}...</small></div>`;
   
   const respuesta = await llamarServidor('obtenerVendedoresPorSucursal', { sucursal: sucursal });
   
@@ -774,8 +884,8 @@ async function cargarVendedores(sucursalForzada = null) {
     respuesta.vendedores.forEach(v => {
       html += `
         <button type="button" class="btn btn-outline-success w-100 rounded-pill d-flex align-items-center justify-content-between px-4 py-2" 
-                onclick="enviarWhatsAppAAsesor('${v.numero}', '${v.nombre}')">
-          <span class="fw-bold text-start">👋 ${v.nombre}</span>
+                onclick="enviarWhatsAppAAsesor('${v.numero}', '${sanitizarXSS(v.nombre)}')">
+          <span class="fw-bold text-start">👋 ${sanitizarXSS(v.nombre)}</span>
           <i class="fa-brands fa-whatsapp fs-4"></i>
         </button>`;
     });
@@ -783,7 +893,7 @@ async function cargarVendedores(sucursalForzada = null) {
     html += `</div>`;
     listaContainer.innerHTML = html;
   } else {
-    listaContainer.innerHTML = `<div class="alert alert-warning small border-0"><i class="fa-solid fa-triangle-exclamation"></i> No hay asesores activos en ${sucursal} en este momento.</div>`;
+    listaContainer.innerHTML = `<div class="alert alert-warning small border-0"><i class="fa-solid fa-triangle-exclamation"></i> No hay asesores activos en ${sanitizarXSS(sucursal)} en este momento.</div>`;
   }
 }
 
@@ -817,22 +927,25 @@ function renderizarProductosDestacados() {
   const productosMostrar = productosDestacados.slice(0, 3); 
 
   productosMostrar.forEach(p => {
-    // FIX: Aplicar reconstructor también a destacados
     const miniaturaRaw = (p.url || "").split(',')[0].trim();
     const miniatura = reconstruirUrlCloudinary(miniaturaRaw);
     
     const etiquetaPrincipal = p.etiquetas[0]; 
+    const safeEtiqueta = sanitizarXSS(etiquetaPrincipal);
+    const safeNombre = sanitizarXSS(p.nombre);
+    const safeMarca = sanitizarXSS(p.marca);
+    const safeCodigo = sanitizarXSS(p.codigo);
 
     const htmlCard = `
       <div class="col-md-4">
         <div class="card h-100 shadow-sm border-0 position-relative">
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="z-index: 10;">
-            ${etiquetaPrincipal}
+            ${safeEtiqueta}
           </span>
-          <img src="${miniatura}" class="card-img-top product-img" style="cursor:pointer;" onclick="abrirDetalles('${p.codigo}')" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">
+          <img src="${miniatura}" class="card-img-top product-img" style="cursor:pointer;" onclick="abrirDetalles('${safeCodigo}')" onerror="this.src='https://placehold.co/600x400?text=Sin+Imagen'">
           <div class="card-body text-center d-flex flex-column">
-             <span class="text-muted small mb-1">${p.marca}</span>
-             <h5 class="fw-bold mb-3">${p.nombre}</h5>
+             <span class="text-muted small mb-1">${safeMarca}</span>
+             <h5 class="fw-bold mb-3">${safeNombre}</h5>
              <div class="mt-auto">
                <button class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="cambiarVista('vista-catalogo')">Ver en catálogo</button>
              </div>
@@ -843,5 +956,3 @@ function renderizarProductosDestacados() {
     contenedor.innerHTML += htmlCard;
   });
 }
-
-setInterval(() => { llamarServidor('keepAlive'); }, 300000);
