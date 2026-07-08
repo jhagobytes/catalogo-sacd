@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycby-ykR3U5swKoOOYOU5kB9etPkxNuVQfbxmJ5XkNLM80-NrtpYWVKNKmPzUK2uKhvKwXA/exec"; 
+const URL_API = "https://script.google.com/macros/s/AKfycbz03Uo-lJm1g_aHlVDkXlyaG8vdT1yzQ9rneQp3RU5BBE1N1L4_7BoEalTJwOxqQDxc/exec"; 
 
 let catalogoCompleto = [];
 const ITEMS_PER_PAGE = 500;
